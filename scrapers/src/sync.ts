@@ -10,7 +10,13 @@ import { OpenAPISource } from './sources/openapi.js';
 const DEFAULT_API_URL = 'http://localhost:3456/api';
 const DEFAULT_ADMIN_TOKEN = 'dev-token';
 const DEFAULT_CONCURRENCY = 6;
-const BATCH_SIZE = 50;
+const BATCH_SIZE = 20;
+
+/** 不同源的并发控制 — 企业微信限速严格，需要低并发 */
+const SOURCE_CONCURRENCY: Record<string, number> = {
+  wecom: 2,
+  feishu: 6,
+};
 
 // ── Source 注册表 ────────────────────────────────────────────────────────
 
@@ -108,7 +114,7 @@ export async function syncSource(
   const apiUrl = options.apiUrl || process.env.SPECFUSION_API_URL || DEFAULT_API_URL;
   const adminToken = options.adminToken || process.env.ADMIN_TOKEN || DEFAULT_ADMIN_TOKEN;
   const limit = options.limit;
-  const concurrency = DEFAULT_CONCURRENCY;
+  const concurrency = SOURCE_CONCURRENCY[sourceId] ?? DEFAULT_CONCURRENCY;
 
   const startTime = Date.now();
   const result: SyncResult = {

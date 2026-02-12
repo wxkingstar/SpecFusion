@@ -12,7 +12,10 @@ const PORT = parseInt(process.env.PORT || '3456', 10);
 const DB_PATH = process.env.DB_PATH || './data/specfusion.db';
 
 async function main() {
-  const fastify = Fastify({ logger: true });
+  const fastify = Fastify({
+    logger: true,
+    bodyLimit: 50 * 1024 * 1024, // 50MB — bulk-upsert 可能传大量文档
+  });
 
   await fastify.register(cors, { origin: true });
   await fastify.register(rateLimit, {
