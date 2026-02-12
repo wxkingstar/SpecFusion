@@ -1,0 +1,19 @@
+{
+  "name": "specfusion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "多源 API 文档融合搜索 Skill — 云端检索，零安装，即问即答",
+  "workspaces": [
+    "api",
+    "scrapers"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "dev": "npm run dev --workspace=api",
+    "sync": "npm run sync --workspace=scrapers"
+  },
+  "engines": {
+    "node": ">=20.18.0"
+  },
+  "license": "MIT"
+}

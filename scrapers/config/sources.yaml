@@ -1,0 +1,24 @@
+sources:
+  - id: wecom
+    name: 企业微信
+    adapter: wecom
+    schedule: "0 3 * * 0"
+    incremental_schedule: "0 3 * * 1-6"
+    options:
+      cookie_file: .wecom_cookies.json
+      cookie_health_check: true
+      rate_limit:
+        initial: 1200
+        medium: 1800
+        conservative: 2500
+      quality_gate:
+        min_doc_ratio: 0.9
+
+  - id: feishu
+    name: 飞书
+    adapter: feishu
+    schedule: "0 4 * * *"
+    options:
+      concurrency: 6
+      response_validation: true
+      locale: zh-CN

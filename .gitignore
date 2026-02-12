@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.db
+*.db-wal
+*.db-shm
+.env
+.env.*
+!.env.example
+.wecom_cookies.json
+*.tgz
+.DS_Store
+coverage/
+*.log
+api/data/
