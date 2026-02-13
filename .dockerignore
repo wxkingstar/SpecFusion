@@ -1,0 +1,18 @@
+node_modules/
+.git/
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# scrapers 源码和依赖（只保留 config/）
+scrapers/src/
+scrapers/dist/
+scrapers/node_modules/
+
+scripts/
+skill/
+.env
+.env.*
+*.md
+!api/db/schema.sql

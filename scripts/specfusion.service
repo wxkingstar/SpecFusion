@@ -1,0 +1,17 @@
+[Unit]
+Description=SpecFusion API Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/specfusion/api
+ExecStart=/usr/bin/node dist/index.js
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PORT=3456
+Environment=DB_PATH=/opt/specfusion/data/specfusion.db
+
+[Install]
+WantedBy=multi-user.target
