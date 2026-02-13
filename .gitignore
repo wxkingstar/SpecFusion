@@ -7,6 +7,7 @@ dist/
 .env.*
 !.env.example
 .wecom_cookies.json
+.claude/
 *.tgz
 .DS_Store
 coverage/

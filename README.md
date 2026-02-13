@@ -39,10 +39,10 @@ curl -fsSL --create-dirs -o .claude/skills/specfusion/SKILL.md \
 
 ### 指向自部署实例
 
-默认使用公共 API `http://specfusion.inagora.org/api`。如果你自部署了 SpecFusion，编辑安装后的 SKILL.md，将所有 `http://specfusion.inagora.org/api` 替换为你的实例地址：
+默认使用公共 API `http://specfusion.inagora.org/api`。如果你自部署了 SpecFusion，编辑安装后的 SKILL.md，将 API 地址替换为你的实例地址：
 
 ```bash
-sed -i '' 's|http://specfusion.inagora.org/api|http://your-host/api|g' \
+sed -i '' 's|http://specfusion.inagora.org/api|http://your-host:3456/api|g' \
   ~/.claude/skills/specfusion/SKILL.md
 ```
 
@@ -59,12 +59,12 @@ sed -i '' 's|http://specfusion.inagora.org/api|http://your-host/api|g' \
 
 所有公开 API 返回 **Markdown 纯文本**（非 JSON），可直接阅读。health 端点例外，返回 JSON。
 
-Base URL: `http://specfusion.inagora.org/api`（或你的自部署地址）
+Base URL: `http://localhost:3456/api`（自部署）或 `http://specfusion.inagora.org/api`（公共实例）
 
 ### 搜索文档
 
 ```bash
-curl -s -G "http://specfusion.inagora.org/api/search" \
+curl -s -G "http://localhost:3456/api/search" \
   --data-urlencode "q=发送应用消息" -d "source=wecom" -d "limit=5"
 ```
 
@@ -78,34 +78,34 @@ curl -s -G "http://specfusion.inagora.org/api/search" \
 ### 获取文档内容
 
 ```bash
-curl -s "http://specfusion.inagora.org/api/doc/{doc_id}"                  # 全文
-curl -s "http://specfusion.inagora.org/api/doc/{doc_id}?summary=true"     # 摘要
+curl -s "http://localhost:3456/api/doc/{doc_id}"                  # 全文
+curl -s "http://localhost:3456/api/doc/{doc_id}?summary=true"     # 摘要
 ```
 
 ### 查看文档源
 
 ```bash
-curl -s "http://specfusion.inagora.org/api/sources"
+curl -s "http://localhost:3456/api/sources"
 ```
 
 ### 浏览分类
 
 ```bash
-curl -s "http://specfusion.inagora.org/api/categories?source=wecom"
-curl -s "http://specfusion.inagora.org/api/categories/wecom/001-企业内部开发"
+curl -s "http://localhost:3456/api/categories?source=wecom"
+curl -s "http://localhost:3456/api/categories/wecom/001-企业内部开发"
 ```
 
 ### 最近更新
 
 ```bash
-curl -s -G "http://specfusion.inagora.org/api/recent" \
+curl -s -G "http://localhost:3456/api/recent" \
   -d "source=wecom" -d "days=7" -d "limit=20"
 ```
 
 ### 健康检查
 
 ```bash
-curl -s "http://specfusion.inagora.org/api/health"
+curl -s "http://localhost:3456/api/health"
 ```
 
 ## 自部署指南

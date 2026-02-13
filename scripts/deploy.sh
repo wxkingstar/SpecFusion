@@ -7,8 +7,8 @@ set -euo pipefail
 #   npm run deploy -- --init  # 首次部署（安装 Node.js、systemd、上传数据库）
 #   npm run deploy -- --db    # 日常部署 + 重新上传数据库
 
-REMOTE_HOST="root@your-server.example.com"
-REMOTE_DIR="/opt/specfusion"
+REMOTE_HOST="${DEPLOY_HOST:?请设置 DEPLOY_HOST 环境变量，例如 user@your-server.com}"
+REMOTE_DIR="${DEPLOY_DIR:-/opt/specfusion}"
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # 解析参数
