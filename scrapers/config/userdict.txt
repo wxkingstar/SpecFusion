@@ -59,6 +59,24 @@ app_access_token 5
 工作通知 5
 企业群 5
 智能人事 5
+CorpId 5
+AgentId 5
+AppKey 5
+AppSecret 5
+SuiteKey 5
+SuiteSecret 5
+suiteTicket 5
+MiniAppId 5
+UnionId 5
+dingtalk-jsapi 5
+accessToken 5
+钉钉小程序 5
+钉钉机器人 5
+互动卡片 5
+考勤打卡 5
+审批流程 5
+钉钉群 5
+客户端JSAPI 5
 
 # 通用 API 术语
 access_token 5

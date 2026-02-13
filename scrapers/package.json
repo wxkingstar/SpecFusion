@@ -11,6 +11,7 @@
     "sync": "tsx src/cli.ts sync",
     "sync:feishu": "tsx src/cli.ts sync feishu",
     "sync:wecom": "tsx src/cli.ts sync wecom",
+    "sync:dingtalk": "tsx src/cli.ts sync dingtalk",
     "list-sources": "tsx src/cli.ts list-sources"
   },
   "dependencies": {

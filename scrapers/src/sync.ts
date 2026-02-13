@@ -3,6 +3,7 @@ import axios, { type AxiosInstance } from 'axios';
 import type { DocSource, DocEntry, DocContent, SyncOptions, SyncResult } from './types.js';
 import { FeishuSource } from './sources/feishu.js';
 import { WecomSource } from './sources/wecom.js';
+import { DingtalkSource } from './sources/dingtalk.js';
 import { OpenAPISource } from './sources/openapi.js';
 
 // ── 默认值 ──────────────────────────────────────────────────────────────
@@ -12,10 +13,11 @@ const DEFAULT_ADMIN_TOKEN = 'dev-token';
 const DEFAULT_CONCURRENCY = 6;
 const BATCH_SIZE = 20;
 
-/** 不同源的并发控制 — 企业微信限速严格，需要低并发 */
+/** 不同源的并发控制 — 企业微信限速严格，钉钉使用 Playwright 串行导航 */
 const SOURCE_CONCURRENCY: Record<string, number> = {
   wecom: 2,
   feishu: 6,
+  dingtalk: 1,
 };
 
 // ── Source 注册表 ────────────────────────────────────────────────────────
@@ -27,6 +29,7 @@ interface SourceFactory {
 const SOURCE_REGISTRY: Record<string, SourceFactory> = {
   feishu: { create: () => new FeishuSource() },
   wecom: { create: () => new WecomSource() },
+  dingtalk: { create: () => new DingtalkSource() },
 };
 
 export function registerOpenAPISource(
