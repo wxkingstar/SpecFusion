@@ -174,4 +174,7 @@ curl -s -G "http://specfusion.inagora.org/api/recent" \
 
 ## 支持的文档源
 
-当前已接入的平台详见 [sources.md](sources.md)。
+| 平台 | source 参数 | 文档数量 | 覆盖范围 |
+|------|-----------|---------|---------|
+| 企业微信 | wecom | ~2,760 | 服务端 API、客户端 API、应用开发 |
+| 飞书 | feishu | ~4,095 | 服务端 API、事件订阅、小程序 |
