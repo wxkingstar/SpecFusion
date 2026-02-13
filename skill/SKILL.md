@@ -1,36 +1,37 @@
 ---
 name: specfusion
 description: |
-  搜索企业微信、飞书、钉钉等开放平台的 API 文档。当用户询问以下内容时自动触发：
-  - 企业微信/飞书/钉钉等平台的 API 用法、参数、接口说明
+  搜索企业微信、飞书等开放平台的 API 文档。当用户询问以下内容时自动触发：
+  - 企业微信/飞书等平台的 API 用法、参数、接口说明
   - 如何调用某个开放平台接口（发消息、获取用户、创建审批等）
   - 开放平台的 webhook、回调、事件订阅配置
   - OAuth、授权、access_token 获取流程
   - 任何涉及第三方平台 OpenAPI 规范的开发问题
-  触发关键词：企业微信、飞书、钉钉、开放平台、API文档、接口文档、
-  wecom、feishu、dingtalk、lark、openapi、webhook、access_token
+  触发关键词：企业微信、飞书、开放平台、API文档、接口文档、
+  wecom、feishu、lark、openapi、webhook、access_token
 user-invocable: true
 argument-hint: "企业微信发送消息 / feishu 审批 / 搜索关键词"
-allowed-tools: WebFetch, Bash, Read
+allowed-tools: Bash, Read
 ---
 
 # SpecFusion — 多源 API 文档搜索
 
-你可以通过云端 API 搜索企业微信、飞书、钉钉等平台的开发文档。
+你可以通过云端 API 搜索企业微信、飞书等平台的开发文档。
 
 ## API 端点
 
-Base URL: `http://localhost:3456/api`
-
-> 部署到生产环境后，替换为 `https://specfusion.your-domain.com/api`
+Base URL: `http://specfusion.inagora.org/api`
 
 ## 搜索文档
 
-使用 WebFetch 调用搜索接口：
+使用 Bash + curl 调用搜索接口：
 
+```bash
+curl -s -G "http://specfusion.inagora.org/api/search" \
+  --data-urlencode "q=发送应用消息" -d "source=wecom" -d "limit=5"
 ```
-GET {BASE_URL}/search?q={关键词}&source={来源}&limit={数量}
-```
+
+> **注意**：中文关键词必须使用 `--data-urlencode` 进行 URL 编码，否则可能返回 400 错误。
 
 参数说明：
 - `q`（必填）：搜索关键词，支持多种搜索方式：
@@ -38,7 +39,7 @@ GET {BASE_URL}/search?q={关键词}&source={来源}&limit={数量}
   - API 路径搜索：`/cgi-bin/message/send`、`/open-apis/contact/v3/users`
   - 错误码搜索：`60011`、`40001`、`errcode 40001`
   - 功能概念搜索：`客户联系`、`会话存档`、`消息卡片`
-- `source`（可选）：文档来源过滤，可选值为 wecom / feishu / dingtalk，不填搜索全部
+- `source`（可选）：文档来源过滤，可选值为 wecom / feishu，不填搜索全部（钉钉计划接入）
 - `mode`（可选，仅企业微信）：开发模式过滤，可选值为 internal（自建应用）/ third_party（第三方应用）/ service_provider（服务商代开发）
 - `limit`（可选）：返回数量，默认 5，最大 20
 
@@ -48,30 +49,88 @@ GET {BASE_URL}/search?q={关键词}&source={来源}&limit={数量}
 
 找到目标文档后，获取文档内容：
 
-```
-GET {BASE_URL}/doc/{doc_id}                  # 返回全文 Markdown
-GET {BASE_URL}/doc/{doc_id}?summary=true     # 返回结构化摘要（~1KB）
+```bash
+curl -s "http://specfusion.inagora.org/api/doc/{doc_id}"                  # 返回全文 Markdown
+curl -s "http://specfusion.inagora.org/api/doc/{doc_id}?summary=true"     # 返回结构化摘要（~1-2KB）
 ```
 
 两种模式都直接返回 Markdown 纯文本（非 JSON），可直接阅读。
 
-摘要模式只返回：接口名称和描述、HTTP 方法和路径、请求参数表格、关键示例（截断到 500 字符）。适合快速预览是否为目标文档。
+摘要模式只返回：接口名称和描述、HTTP 方法和路径、请求参数表格、请求/响应 JSON 示例（如有）。适合快速预览是否为目标文档。
 
 ## 查看可用文档源
 
-```
-GET {BASE_URL}/sources
+```bash
+curl -s "http://specfusion.inagora.org/api/sources"
 ```
 
 返回所有已接入的文档源及其文档数量（Markdown 格式）。
 
+## 浏览文档分类
+
+不确定该搜什么时，查看各平台的文档分类：
+
+```bash
+curl -s "http://specfusion.inagora.org/api/categories?source=wecom"
+```
+
+返回指定平台（或全部平台）的文档分类及数量，帮助发现可用的 API 领域。
+
+找到感兴趣的分类后，可以下钻查看该分类下的具体文档列表：
+
+```bash
+curl -s "http://specfusion.inagora.org/api/categories/wecom/001-企业内部开发"
+```
+
+参数说明：
+- 路径中 `wecom` 为文档来源，`001-企业内部开发` 为分类名称（从上面的分类列表获取）
+- `mode`（可选）：按开发模式过滤
+- `limit`（可选）：返回数量，默认 50，最大 100
+
+返回该分类下的文档表格（标题、接口路径、模式、文档ID），方便进一步用 `/api/doc/{id}` 获取详情。
+
+## 最近更新
+
+追踪文档变更，查看近期更新的文档：
+
+```bash
+curl -s -G "http://specfusion.inagora.org/api/recent" \
+  -d "source=wecom" -d "days=7" -d "limit=20"
+```
+
+参数说明：
+- `source`（可选）：限定文档来源
+- `days`（可选）：查看最近 N 天的更新，默认 7，最大 90
+- `limit`（可选）：返回数量，默认 20，最大 100
+
+返回近期新增或修改的文档列表。
+
 ## 使用流程
 
-1. **提取关键词**：从用户问题中提取最具体的 API 名称或功能描述
-2. **搜索文档**：调用 `/search` 接口，如果用户指定了平台则添加 `source` 参数
-3. **预览文档**：对搜索结果中最相关的文档，先用 `/doc/{doc_id}?summary=true` 摘要模式预览
-4. **获取全文**：确认是目标文档后，再调用 `/doc/{doc_id}` 获取完整内容
-5. **回答用户**：基于文档内容回答，引用文档标题和来源平台
+1. **检查服务**：用 `curl -s http://specfusion.inagora.org/api/health` 确认 API 可用
+2. **提取关键词**：从用户问题中提取搜索词，注意优先级：
+   - 用户提到错误码数字（如 60011、40001）→ 直接用数字搜索，系统有专用错误码索引
+   - 用户提供了 API 路径（如 `/cgi-bin/message/send`）→ 直接用路径搜索
+   - 否则 → 提取最具体的功能名称作为关键词
+3. **搜索文档**：用 `curl` 调用 `/search` 接口，如果用户指定了平台则添加 `source` 参数
+4. **预览文档**：对搜索结果中最相关的文档，先用 `/doc/{doc_id}?summary=true` 摘要模式预览
+5. **获取全文**：确认是目标文档后，再调用 `/doc/{doc_id}` 获取完整内容
+6. **回答用户**：基于文档内容回答，引用文档标题和来源平台
+7. **生成调用示例**：如果用户场景涉及 API 调用，主动生成示例代码：
+   - 默认用 curl 命令（最通用），如能推断用户技术栈则用对应语言
+   - 填入真实 API 路径和必填参数，需替换的值用占位符标注（`YOUR_ACCESS_TOKEN`）
+   - 文档中有请求体 JSON 示例时直接引用
+
+## 搜索优化技巧
+
+如果搜索返回 0 条或结果不相关：
+1. **缩短关键词**：去掉修饰词，保留核心功能名（"创建自建应用审批模板" → "审批模板"）
+2. **换同义词**：尝试不同表述（"群机器人" <-> "webhook"，"通讯录" <-> "部门列表"）
+3. **去掉 source**：不确定属于哪个平台时，去掉 source 参数搜全部
+4. **用路径搜**：有 API 路径片段时直接按路径搜索（如 `/cgi-bin/user/get`）
+5. **用宽泛词**：回退到功能域搜索（"消息"、"审批"、"通讯录"、"日历"）
+6. **浏览分类**：调用 `/api/categories` 查看有哪些文档分类，找到合适的方向
+7. 以上均无结果 → 说明可能尚未收录，引导用户访问官方文档
 
 ## 上下文管理
 
@@ -80,7 +139,7 @@ GET {BASE_URL}/sources
 - 仅当用户需要具体参数、代码示例或完整细节时才获取全文
 - 单次对话中建议不超过 3 篇全文，超过时提示用户上下文可能不足（软限制）
 - 如果用户问题涉及多个接口，分多次搜索，每次聚焦一个
-- 如果 WebFetch 返回的全文看起来被截断，用 `Bash(curl)` 重试获取原始完整内容
+- 如果全文看起来被截断，可增加 curl 超时或重试
 
 ## 注意事项
 
@@ -88,17 +147,21 @@ GET {BASE_URL}/sources
 - 如果用户提供了完整的 API 路径（如 `/cgi-bin/message/send`），直接按路径搜索
 - 首次搜索不理想时，尝试同义词或换个角度的关键词
 - 回答时注明文档来源（如"根据企业微信文档《发送应用消息》..."）
-- 企业微信文档区分开发模式：搜到多篇同名文档时，确认用户是自建应用、第三方应用还是服务商代开发，加 `mode` 参数过滤
+- 企业微信文档区分开发模式（mode 参数）：
+  - **默认不加 mode 参数**（搜全部模式），除非用户明确了场景
+  - 如果同名文档出现在多个 mode 下，告知用户差异并确认
+  - 常见判断：提到"自建应用" → internal；提到"第三方应用/ISV/应用市场" → third_party；提到"服务商/代开发" → service_provider
 - 文档内容可能包含代码示例，保留原始格式展示给用户
-- 跨平台对比：当用户问对比问题时，分别搜索两个平台，做对比展示
+- 跨平台对比（如"企业微信和飞书发消息有什么区别"）：
+  1. 分别用 `source=wecom` 和 `source=feishu` 搜索同一功能
+  2. 对两篇文档都用 `summary=true` 预览，确认是对等功能
+  3. 获取全文后，用表格按维度对比：接口路径、请求方式、必填参数、权限要求、调用限制
 
 ## 降级方案
 
-如果云端 API 不可用（WebFetch 返回错误或超时）：
+如果 API 不可用（curl 返回连接错误或超时）：
 
-1. 首选：用 WebFetch 直接访问对应平台的官方文档搜索页面
-2. 备选：用 `Bash(curl)` 调用云端 API 获取原始响应
-3. 兜底：引导用户直接访问官方文档站点
+1. 引导用户直接访问官方文档站点
    - 企业微信：https://developer.work.weixin.qq.com/document/
    - 飞书：https://open.feishu.cn/document/
    - 钉钉：https://open.dingtalk.com/document/

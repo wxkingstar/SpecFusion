@@ -332,19 +332,48 @@ export function search(
     }
   }
 
-  // ----- 排序 & 截取 -----
+  // ----- 排序 & 去重 & 截取 -----
   scoredRows.sort((a, b) => b.score - a.score);
+
+  // 未指定 mode 时按 title+api_path 去重，保留得分最高的，其余 mode 合并
+  const otherModesMap = new Map<number, string[]>();
+  if (!mode) {
+    const seen = new Map<string, { idx: number; modes: string[] }>();
+    const deduped: ScoredRow[] = [];
+    for (const sr of scoredRows) {
+      const key = `${sr.doc.title}\0${sr.doc.api_path ?? ''}`;
+      const existing = seen.get(key);
+      if (existing) {
+        if (sr.doc.dev_mode) existing.modes.push(sr.doc.dev_mode);
+      } else {
+        const entry = { idx: deduped.length, modes: [] as string[] };
+        seen.set(key, entry);
+        deduped.push(sr);
+      }
+    }
+    scoredRows = deduped;
+    // 记录每个位置的 other_modes（去重，排除与主文档相同的 mode）
+    for (const entry of seen.values()) {
+      const mainMode = deduped[entry.idx]?.doc.dev_mode;
+      const unique = [...new Set(entry.modes)].filter(m => m !== mainMode);
+      if (unique.length > 0) {
+        otherModesMap.set(entry.idx, unique);
+      }
+    }
+  }
+
   const totalCount = scoredRows.length;
   scoredRows = scoredRows.slice(0, limit);
 
   // ----- 构造 SearchResult -----
-  const results: SearchResult[] = scoredRows.map(({ doc, score }) => ({
+  const results: SearchResult[] = scoredRows.map(({ doc, score }, idx) => ({
     id: doc.id,
     source_id: doc.source_id,
     title: doc.title,
     path: doc.path,
     api_path: doc.api_path,
     dev_mode: doc.dev_mode,
+    other_modes: otherModesMap.get(idx),
     doc_type: doc.doc_type,
     source_url: doc.source_url,
     last_updated: doc.last_updated,
@@ -380,7 +409,18 @@ export function formatSearchResults(
   const sourceLabel = source ? sourceName(source) : '全部';
 
   if (results.length === 0) {
-    return `## 搜索结果：${query}（来源：${sourceLabel}，共 0 条，耗时 ${tookMs}ms）\n\n暂无结果。`;
+    const header = `## 搜索结果：${query}（来源：${sourceLabel}，共 0 条，耗时 ${tookMs}ms）`;
+    const lines = [header, '', '暂无结果。建议：', ''];
+    if (source) {
+      lines.push(`- 当前限定了来源 \`${source}\`，尝试去掉 source 参数搜索全部平台`);
+    }
+    if (query.length > 4) {
+      lines.push('- 关键词较长，尝试只保留核心功能名');
+    }
+    lines.push('- 换用同义词或不同表述');
+    lines.push('- 查看已接入文档源：`GET /api/sources`');
+    lines.push('- 浏览文档分类：`GET /api/categories`');
+    return lines.join('\n');
   }
 
   const lines: string[] = [
@@ -390,8 +430,10 @@ export function formatSearchResults(
 
   results.forEach((r, i) => {
     lines.push(`### ${i + 1}. ${r.title} [score: ${r.score}]`);
+    const modeLabel = r.dev_mode ?? '-';
+    const modeExtra = r.other_modes?.length ? `（另见：${r.other_modes.join(', ')}）` : '';
     lines.push(
-      `- 来源：${sourceName(r.source_id)} | 模式：${r.dev_mode ?? '-'} | 路径：${r.path}`,
+      `- 来源：${sourceName(r.source_id)} | 模式：${modeLabel}${modeExtra} | 路径：${r.path}`,
     );
     if (r.api_path) {
       lines.push(`- 接口：\`${r.api_path}\``);

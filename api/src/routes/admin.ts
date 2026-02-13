@@ -4,6 +4,8 @@ import {
   bulkUpsert,
   deleteDocument,
   upsertSource,
+  upsertErrorCodes,
+  makeDocId,
   getDb,
 } from '../services/doc-store.js';
 import { tokenize } from '../services/tokenizer.js';
@@ -37,6 +39,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
       source_url?: string;
       metadata?: Record<string, unknown>;
       last_updated?: string;
+      error_codes?: Array<{ code: string; message?: string; description?: string }>;
     };
 
     if (!body.source || !body.path || !body.title || !body.content) {
@@ -65,6 +68,19 @@ export async function adminRoutes(fastify: FastifyInstance) {
     };
 
     const result = upsertDocument(doc);
+
+    // 写入错误码
+    if (body.error_codes?.length) {
+      const codes = body.error_codes.map((ec) => ({
+        source_id: body.source,
+        code: ec.code,
+        message: ec.message,
+        description: ec.description,
+        doc_id: result.doc_id,
+      }));
+      upsertErrorCodes(body.source, codes);
+    }
+
     return result;
   });
 
@@ -85,6 +101,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
         source_url?: string;
         metadata?: Record<string, unknown>;
         last_updated?: string;
+        error_codes?: Array<{ code: string; message?: string; description?: string }>;
       }>;
     };
 
@@ -113,6 +130,27 @@ export async function adminRoutes(fastify: FastifyInstance) {
     }));
 
     const result = bulkUpsert(body.source, docs);
+
+    // 写入错误码
+    const allCodes: Array<{ source_id: string; code: string; message?: string; description?: string; doc_id?: string }> = [];
+    for (const d of body.documents) {
+      if (d.error_codes?.length) {
+        const docId = makeDocId(body.source, d.path);
+        for (const ec of d.error_codes) {
+          allCodes.push({
+            source_id: body.source,
+            code: ec.code,
+            message: ec.message,
+            description: ec.description,
+            doc_id: docId,
+          });
+        }
+      }
+    }
+    if (allCodes.length > 0) {
+      upsertErrorCodes(body.source, allCodes);
+    }
+
     return result;
   });
 

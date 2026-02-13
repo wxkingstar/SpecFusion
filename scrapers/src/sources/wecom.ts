@@ -7,7 +7,6 @@ import converter from 'html-to-markdown';
 import { load } from 'cheerio';
 import sanitize from 'sanitize-filename';
 import { decode } from 'html-entities';
-import { chromium } from 'playwright';
 import { tokenize } from '../utils/tokenizer.js';
 import type { DocSource, DocEntry, DocContent } from '../types.js';
 
@@ -477,12 +476,38 @@ export class WecomSource implements DocSource {
     targetUrl = `${BASE_URL}/document/path/90664`,
   ): Promise<boolean> {
     console.log('\n[wecom] 正在打开浏览器进行登录...');
+
+    let chromium: any;
+    try {
+      const pw = await import('playwright');
+      chromium = pw.chromium;
+    } catch {
+      console.warn(
+        '[wecom] Playwright 未安装，无法自动打开浏览器登录。\n' +
+          '  请手动更新 Cookie：\n' +
+          '  1. 在浏览器中打开 https://developer.work.weixin.qq.com/document/path/90664\n' +
+          '  2. 登录后通过开发者工具获取 Cookie\n' +
+          '  3. 保存到 .wecom_cookies.json 或设置环境变量 WECOM_COOKIES',
+      );
+      return false;
+    }
+
     console.log('[wecom] 请在浏览器中完成登录/验证，完成后页面会自动关闭。\n');
 
-    const browser = await chromium.launch({
-      headless: false,
-      args: ['--start-maximized'],
-    });
+    let browser;
+    try {
+      browser = await chromium.launch({
+        headless: false,
+        args: ['--start-maximized'],
+      });
+    } catch (err: any) {
+      console.warn(
+        `[wecom] 启动浏览器失败: ${err.message}\n` +
+          '  可能原因：Playwright 浏览器未安装（运行 npx playwright install chromium）\n' +
+          '  请手动更新 Cookie（见上方说明）',
+      );
+      return false;
+    }
 
     const context = await browser.newContext({
       viewport: null,
@@ -510,7 +535,7 @@ export class WecomSource implements DocSource {
 
       const cookies = await context.cookies();
       const relevantCookies = cookies.filter(
-        (c) =>
+        (c: any) =>
           c.domain.includes('work.weixin.qq.com') || c.domain.includes('weixin.qq.com'),
       );
 
@@ -659,11 +684,20 @@ export class WecomSource implements DocSource {
     // Validate cookies first
     let healthy = await this.checkCookieHealth();
     if (!healthy) {
-      console.warn('[wecom] Cookie 无效或已过期，尝试打开浏览器登录...');
-      const loginSuccess = await this.openBrowserForLogin();
-      if (loginSuccess) {
-        healthy = await this.checkCookieHealth();
+      // 先尝试重新加载 cookie 文件（用户可能在运行期间手动更新了）
+      console.warn('[wecom] Cookie 无效或已过期，尝试重新加载 cookie 文件...');
+      this.importCookiesFromFile(COOKIE_FILE);
+      healthy = await this.checkCookieHealth();
+
+      if (!healthy) {
+        // cookie 文件也不行，尝试 Playwright 浏览器登录
+        console.warn('[wecom] Cookie 文件无效，尝试打开浏览器登录...');
+        const loginSuccess = await this.openBrowserForLogin();
+        if (loginSuccess) {
+          healthy = await this.checkCookieHealth();
+        }
       }
+
       if (!healthy) {
         throw new Error(
           'Cookie 无效或已过期。请手动获取企业微信开发者文档的 Cookie：\n' +

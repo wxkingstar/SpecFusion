@@ -10,7 +10,8 @@
   "scripts": {
     "build": "npm run build --workspaces",
     "dev": "npm run dev --workspace=api",
-    "sync": "npm run sync --workspace=scrapers"
+    "sync": "npm run sync --workspace=scrapers",
+    "deploy": "bash scripts/deploy.sh"
   },
   "engines": {
     "node": ">=20.18.0"

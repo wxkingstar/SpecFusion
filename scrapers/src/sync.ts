@@ -78,6 +78,7 @@ interface PendingDoc {
   source_url?: string;
   metadata?: Record<string, unknown>;
   last_updated?: string;
+  error_codes?: Array<{ code: string; message?: string; description?: string }>;
 }
 
 async function flushBatch(
@@ -185,6 +186,7 @@ export async function syncSource(
           source_url: entry.sourceUrl,
           metadata: content.metadata,
           last_updated: entry.lastUpdated,
+          error_codes: content.errorCodes,
         };
 
         pendingDocs.push(doc);

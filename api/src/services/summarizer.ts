@@ -25,6 +25,8 @@ export function generateSummary(
   content: string,
   docId: string,
   sourceId: string,
+  docTitle?: string,
+  docApiPath?: string,
 ): string {
   const lines = content.split('\n');
   const parts: string[] = [];
@@ -36,8 +38,8 @@ export function generateSummary(
   }
   if (metaLines.length > 0) parts.push('');
 
-  // 2. 提取标题（第一个 # 标题）
-  const title = extractTitle(lines);
+  // 2. 提取标题 — 优先使用 DB 字段（content 中可能提取到模板占位符）
+  const title = docTitle || extractTitle(lines);
   if (title) {
     parts.push(`# ${title}`);
     parts.push('');
@@ -50,13 +52,19 @@ export function generateSummary(
     parts.push('');
   }
 
-  // 4. 提取接口信息
-  const apiInfo = extractApiInfo(content);
+  // 4. 提取接口信息 — 正则提取失败时回退到 DB 字段
+  let apiInfo = extractApiInfo(content);
+  if (!apiInfo && docApiPath) {
+    const methodMatch = content.match(/\b(GET|POST|PUT|PATCH|DELETE)\b/i);
+    apiInfo = { method: methodMatch?.[1]?.toUpperCase(), path: docApiPath };
+  }
   if (apiInfo) {
     parts.push('## 接口信息');
     parts.push('');
-    if (apiInfo.method && apiInfo.path) {
+    if (apiInfo.method) {
       parts.push(`- **方法**：${apiInfo.method}`);
+    }
+    if (apiInfo.path) {
       parts.push(`- **路径**：\`${apiInfo.path}\``);
     }
 
@@ -77,7 +85,24 @@ export function generateSummary(
     parts.push('');
   }
 
-  // 6. 添加获取全文提示
+  // 6. 提取 JSON 代码块示例（最多 2 个，每个截断到 500 字符）
+  const jsonExamples = extractJsonExamples(lines);
+  if (jsonExamples.length > 0) {
+    parts.push('## 示例');
+    parts.push('');
+    for (const ex of jsonExamples) {
+      if (ex.label) {
+        parts.push(`**${ex.label}**`);
+        parts.push('');
+      }
+      parts.push('```json');
+      parts.push(ex.code);
+      parts.push('```');
+      parts.push('');
+    }
+  }
+
+  // 7. 添加获取全文提示
   parts.push(`*（完整参数和代码示例请获取全文：\`/doc/${docId}\`）*`);
 
   return parts.join('\n');
@@ -214,6 +239,68 @@ function extractFirstTable(lines: string[], maxRows: number): string | null {
     return tableLines.join('\n');
   }
   return null;
+}
+
+interface JsonExample {
+  label: string | null;
+  code: string;
+}
+
+/**
+ * 从文档内容中提取 JSON 代码块示例
+ * 最多提取 2 个，每个截断到 500 字符
+ */
+function extractJsonExamples(contentLines: string[]): JsonExample[] {
+  const examples: JsonExample[] = [];
+  const fenceRe = /^```json\s*$/;
+  const endFenceRe = /^```\s*$/;
+
+  let i = 0;
+  while (i < contentLines.length && examples.length < 2) {
+    const trimmed = contentLines[i].trim();
+    if (fenceRe.test(trimmed)) {
+      // 找到代码块前最近的标题行作为 label
+      let label: string | null = null;
+      for (let j = i - 1; j >= Math.max(0, i - 5); j--) {
+        const prev = contentLines[j].trim();
+        if (!prev) continue;
+        // 标题行
+        const headingMatch = prev.match(/^#{1,6}\s+(.+)/);
+        if (headingMatch) {
+          label = headingMatch[1].trim();
+          break;
+        }
+        // 加粗行或普通文本行（紧邻代码块的描述性文字）
+        if (prev.length < 50) {
+          label = prev.replace(/\*\*/g, '').replace(/[:#]/g, '').trim();
+          break;
+        }
+        break;
+      }
+
+      // 收集代码块内容
+      const codeLines: string[] = [];
+      i++;
+      while (i < contentLines.length) {
+        if (endFenceRe.test(contentLines[i].trim())) {
+          break;
+        }
+        codeLines.push(contentLines[i]);
+        i++;
+      }
+
+      let code = codeLines.join('\n').trim();
+      if (code.length > 0) {
+        if (code.length > 500) {
+          code = code.slice(0, 497) + '...';
+        }
+        examples.push({ label, code });
+      }
+    }
+    i++;
+  }
+
+  return examples;
 }
 
 function countRemainingRows(lines: string[], startIdx: number): number {

@@ -29,7 +29,7 @@ function now(): string {
   return new Date().toISOString();
 }
 
-function makeDocId(sourceId: string, path: string): string {
+export function makeDocId(sourceId: string, path: string): string {
   const hash = sha256(path).slice(0, 12);
   return `${sourceId}_${hash}`;
 }

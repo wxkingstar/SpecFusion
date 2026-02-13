@@ -17,7 +17,7 @@ export async function docRoutes(fastify: FastifyInstance) {
     reply.type('text/markdown; charset=utf-8');
 
     if (summary === 'true') {
-      return generateSummary(doc.content, doc.id, doc.source_id);
+      return generateSummary(doc.content, doc.id, doc.source_id, doc.title, doc.api_path);
     }
 
     // 在全文前添加元信息注释

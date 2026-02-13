@@ -43,6 +43,7 @@ export interface SearchResult {
   path: string;
   api_path?: string;
   dev_mode?: string;
+  other_modes?: string[];
   doc_type: string;
   source_url?: string;
   last_updated?: string;
