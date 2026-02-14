@@ -71,6 +71,8 @@ sync-xiaohongshu: ## 同步小红书文档
 
 upload-db: ## 上传 data/specfusion.db 到 K8s PVC
 	@test -f $(DB_FILE) || { echo "✗ $(DB_FILE) 不存在，先运行 make sync"; exit 1; }
+	@echo "==> WAL checkpoint..."
+	@sqlite3 $(DB_FILE) "PRAGMA wal_checkpoint(TRUNCATE);" > /dev/null
 	@echo "==> 数据库大小: $$(ls -lh $(DB_FILE) | awk '{print $$5}')"
 	@echo "==> Scale down $(DEPLOY_NAME)..."
 	$(KC) scale deployment/$(DEPLOY_NAME) --replicas=0
