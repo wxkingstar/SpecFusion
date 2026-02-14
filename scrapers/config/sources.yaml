@@ -22,3 +22,10 @@ sources:
       concurrency: 6
       response_validation: true
       locale: zh-CN
+
+  - id: xiaohongshu
+    name: 小红书
+    adapter: xiaohongshu
+    schedule: "0 5 * * 0"
+    options:
+      concurrency: 1

@@ -50,12 +50,7 @@ npm run build
 
 ## 数据库路径
 
-项目中存在两个数据库文件，用途不同：
-
-- `api/data/specfusion.db` — 本地 dev 服务（`npm run dev`）的工作数据库，scraper 同步数据写入此处
-- `data/specfusion.db` — 部署用数据库，上传到 K8s PVC 的是这个文件
-
-**同步后部署前，必须确认 `data/specfusion.db` 包含最新数据。** 如果 scraper 写入的是 `api/data/specfusion.db`，需要先将数据合并到 `data/specfusion.db` 再上传。
+项目统一使用 `data/specfusion.db`（项目根目录）。dev 服务和 K8s 部署共用同一个文件，scraper 同步后可直接上传，无需合并。
 
 ## Playwright Scraper 编码规范
 

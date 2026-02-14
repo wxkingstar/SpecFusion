@@ -4,6 +4,7 @@ import type { DocSource, DocEntry, DocContent, SyncOptions, SyncResult } from '.
 import { FeishuSource } from './sources/feishu.js';
 import { WecomSource } from './sources/wecom.js';
 import { DingtalkSource } from './sources/dingtalk.js';
+import { XiaohongshuSource } from './sources/xiaohongshu.js';
 import { OpenAPISource } from './sources/openapi.js';
 
 // ── 默认值 ──────────────────────────────────────────────────────────────
@@ -18,6 +19,7 @@ const SOURCE_CONCURRENCY: Record<string, number> = {
   wecom: 2,
   feishu: 6,
   dingtalk: 1,
+  xiaohongshu: 1,
 };
 
 // ── Source 注册表 ────────────────────────────────────────────────────────
@@ -30,6 +32,7 @@ const SOURCE_REGISTRY: Record<string, SourceFactory> = {
   feishu: { create: () => new FeishuSource() },
   wecom: { create: () => new WecomSource() },
   dingtalk: { create: () => new DingtalkSource() },
+  xiaohongshu: { create: () => new XiaohongshuSource() },
 };
 
 export function registerOpenAPISource(
