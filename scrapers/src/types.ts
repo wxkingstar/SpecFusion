@@ -52,6 +52,10 @@ export interface SyncOptions {
   incremental?: boolean;
   /** 限制抓取数量（调试用） */
   limit?: number;
+  /** 跳过前 N 篇文档（分批处理用） */
+  offset?: number;
+  /** 跳过已存在的文档（仅抓取缺失文档） */
+  skipExisting?: boolean;
   /** API 服务地址 */
   apiUrl?: string;
   /** Admin Token */

@@ -5,6 +5,7 @@ import { FeishuSource } from './sources/feishu.js';
 import { WecomSource } from './sources/wecom.js';
 import { DingtalkSource } from './sources/dingtalk.js';
 import { XiaohongshuSource } from './sources/xiaohongshu.js';
+import { TaobaoSource } from './sources/taobao.js';
 import { OpenAPISource } from './sources/openapi.js';
 
 // ── 默认值 ──────────────────────────────────────────────────────────────
@@ -20,6 +21,7 @@ const SOURCE_CONCURRENCY: Record<string, number> = {
   feishu: 6,
   dingtalk: 1,
   xiaohongshu: 1,
+  taobao: 1,
 };
 
 // ── Source 注册表 ────────────────────────────────────────────────────────
@@ -33,6 +35,7 @@ const SOURCE_REGISTRY: Record<string, SourceFactory> = {
   wecom: { create: () => new WecomSource() },
   dingtalk: { create: () => new DingtalkSource() },
   xiaohongshu: { create: () => new XiaohongshuSource() },
+  taobao: { create: () => new TaobaoSource() },
 };
 
 export function registerOpenAPISource(
@@ -150,9 +153,29 @@ export async function syncSource(
     entries = await source.fetchCatalog();
   }
 
+  const offset = options.offset || 0;
+  if (offset > 0) {
+    console.log(`[sync] 跳过前 ${offset} 篇`);
+  }
+  // 始终 slice 以释放原始大数组引用
+  entries = entries.slice(offset);
+
   if (limit && limit > 0) {
     entries = entries.slice(0, limit);
     console.log(`[sync] 限制处理数量: ${limit}`);
+  }
+
+  // 跳过已存在的文档
+  if (options.skipExisting) {
+    try {
+      const resp = await client.get(`/admin/source-paths/${sourceId}`);
+      const existingPaths = new Set<string>(resp.data as string[]);
+      const before = entries.length;
+      entries = entries.filter((e) => !existingPaths.has(e.path));
+      console.log(`[sync] 跳过已存在文档: ${before - entries.length} 篇, 剩余 ${entries.length} 篇`);
+    } catch {
+      console.warn('[sync] 无法获取已有文档列表，将处理全部文档');
+    }
   }
 
   const totalEntries = entries.length;
@@ -164,8 +187,7 @@ export async function syncSource(
     return result;
   }
 
-  // 2. 并发获取内容并批量推送
-  const queue = new PQueue({ concurrency });
+  // 2. 获取内容并批量推送
   const pendingDocs: PendingDoc[] = [];
   let processedCount = 0;
   let lastProgressLog = 0;
@@ -177,48 +199,58 @@ export async function syncSource(
     }
   };
 
-  for (const entry of entries) {
-    queue.add(async () => {
-      try {
-        const content: DocContent = await source.fetchContent(entry);
+  const processEntry = async (entry: DocEntry) => {
+    try {
+      const content: DocContent = await source.fetchContent(entry);
 
-        const doc: PendingDoc = {
-          path: entry.path,
-          title: entry.title,
-          content: content.markdown,
-          api_path: content.apiPath || entry.apiPath,
-          dev_mode: entry.devMode,
-          doc_type: entry.docType,
-          source_url: entry.sourceUrl,
-          metadata: content.metadata,
-          last_updated: entry.lastUpdated,
-          error_codes: content.errorCodes,
-        };
+      const doc: PendingDoc = {
+        path: entry.path,
+        title: entry.title,
+        content: content.markdown,
+        api_path: content.apiPath || entry.apiPath,
+        dev_mode: entry.devMode,
+        doc_type: entry.docType,
+        source_url: entry.sourceUrl,
+        metadata: content.metadata,
+        last_updated: entry.lastUpdated,
+        error_codes: content.errorCodes,
+      };
 
-        pendingDocs.push(doc);
+      pendingDocs.push(doc);
 
-        // 达到批次大小时推送
-        if (pendingDocs.length >= BATCH_SIZE) {
-          await flushPending();
-        }
-      } catch (error: unknown) {
-        result.errors++;
-        const msg = error instanceof Error ? error.message : String(error);
-        console.error(`[sync] 获取文档失败: ${entry.title} — ${msg}`);
+      // 达到批次大小时推送
+      if (pendingDocs.length >= BATCH_SIZE) {
+        await flushPending();
       }
+    } catch (error: unknown) {
+      result.errors++;
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[sync] 获取文档失败: ${entry.title} — ${msg}`);
+    }
 
-      processedCount++;
-      // 每 100 篇或进度 10% 输出日志
-      const progressInterval = Math.max(100, Math.floor(totalEntries / 10));
-      if (processedCount - lastProgressLog >= progressInterval) {
-        lastProgressLog = processedCount;
-        const pct = ((processedCount / totalEntries) * 100).toFixed(1);
-        console.log(`[sync] 进度: ${processedCount}/${totalEntries} (${pct}%)`);
-      }
-    });
+    processedCount++;
+    // 每 100 篇或进度 10% 输出日志
+    const progressInterval = Math.max(100, Math.floor(totalEntries / 10));
+    if (processedCount - lastProgressLog >= progressInterval) {
+      lastProgressLog = processedCount;
+      const pct = ((processedCount / totalEntries) * 100).toFixed(1);
+      console.log(`[sync] 进度: ${processedCount}/${totalEntries} (${pct}%)`);
+    }
+  };
+
+  if (concurrency <= 1) {
+    // 串行处理 — 避免 PQueue 在大量任务时的事件循环阻塞
+    for (const entry of entries) {
+      await processEntry(entry);
+    }
+  } else {
+    // 并发处理
+    const queue = new PQueue({ concurrency });
+    for (const entry of entries) {
+      queue.add(() => processEntry(entry));
+    }
+    await queue.onIdle();
   }
-
-  await queue.onIdle();
 
   // 3. 推送剩余文档
   await flushPending();

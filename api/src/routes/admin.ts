@@ -154,6 +154,18 @@ export async function adminRoutes(fastify: FastifyInstance) {
     return result;
   });
 
+  // 获取某个源的所有文档 path
+  fastify.get('/admin/source-paths/:sourceId', async (request, reply) => {
+    if (!verifyAdmin(request, reply)) return;
+
+    const { sourceId } = request.params as { sourceId: string };
+    const db = getDb();
+    const rows = db
+      .prepare('SELECT path FROM documents WHERE source_id = ?')
+      .all(sourceId) as Array<{ path: string }>;
+    return rows.map((r) => r.path);
+  });
+
   // 删除文档
   fastify.delete('/admin/doc/:docId', async (request, reply) => {
     if (!verifyAdmin(request, reply)) return;

@@ -29,3 +29,10 @@ sources:
     schedule: "0 5 * * 0"
     options:
       concurrency: 1
+
+  - id: taobao
+    name: 淘宝开放平台
+    adapter: taobao
+    schedule: "0 6 * * 0"
+    options:
+      concurrency: 3

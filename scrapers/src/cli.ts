@@ -18,18 +18,24 @@ program
   .option('--all', '同步所有已注册文档源')
   .option('-i, --incremental', '增量同步（仅获取变更文档）')
   .option('-l, --limit <number>', '限制处理文档数量（调试用）', parseInt)
+  .option('--offset <number>', '跳过前 N 篇文档（分批处理用）', parseInt)
+  .option('--skip-existing', '跳过已存在的文档（仅抓取缺失文档）')
   .option('--api-url <url>', 'API 服务地址', process.env.SPECFUSION_API_URL || 'http://localhost:3456/api')
   .option('--admin-token <token>', 'Admin Token', process.env.ADMIN_TOKEN || 'dev-token')
   .action(async (source: string | undefined, opts: {
     all?: boolean;
     incremental?: boolean;
     limit?: number;
+    offset?: number;
+    skipExisting?: boolean;
     apiUrl?: string;
     adminToken?: string;
   }) => {
     const syncOpts: SyncOptions = {
       incremental: opts.incremental,
       limit: opts.limit,
+      offset: opts.offset,
+      skipExisting: opts.skipExisting,
       apiUrl: opts.apiUrl,
       adminToken: opts.adminToken,
     };
