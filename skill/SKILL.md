@@ -1,22 +1,22 @@
 ---
 name: specfusion
 description: |
-  搜索企业微信、飞书、钉钉、小红书等开放平台的 API 文档。当用户询问以下内容时自动触发：
-  - 企业微信/飞书/钉钉/小红书等平台的 API 用法、参数、接口说明
+  搜索企业微信、飞书、钉钉、淘宝开放平台、小红书等开放平台的 API 文档。当用户询问以下内容时自动触发：
+  - 企业微信/飞书/钉钉/淘宝/小红书等平台的 API 用法、参数、接口说明
   - 如何调用某个开放平台接口（发消息、获取用户、创建审批等）
   - 开放平台的 webhook、回调、事件订阅配置
   - OAuth、授权、access_token 获取流程
   - 任何涉及第三方平台 OpenAPI 规范的开发问题
-  触发关键词：企业微信、飞书、钉钉、小红书、开放平台、API文档、接口文档、
-  wecom、feishu、lark、dingtalk、xiaohongshu、xhs、电商开放平台、openapi、webhook、access_token
+  触发关键词：企业微信、飞书、钉钉、淘宝、小红书、开放平台、API文档、接口文档、
+  wecom、feishu、lark、dingtalk、taobao、xiaohongshu、xhs、电商开放平台、openapi、webhook、access_token
 user-invocable: true
-argument-hint: "企业微信发送消息 / feishu 审批 / 小红书订单 / 搜索关键词"
+argument-hint: "企业微信发送消息 / feishu 审批 / 淘宝商品发布 / 小红书订单 / 搜索关键词"
 allowed-tools: Bash, Read
 ---
 
 # SpecFusion — 多源 API 文档搜索
 
-你可以通过云端 API 搜索企业微信、飞书、钉钉、小红书等平台的开发文档。
+你可以通过云端 API 搜索企业微信、飞书、钉钉、淘宝开放平台、小红书等平台的开发文档。
 
 ## API 端点
 
@@ -39,7 +39,7 @@ curl -s -G "http://specfusion.inagora.org/api/search" \
   - API 路径搜索：`/cgi-bin/message/send`、`/open-apis/contact/v3/users`
   - 错误码搜索：`60011`、`40001`、`errcode 40001`
   - 功能概念搜索：`客户联系`、`会话存档`、`消息卡片`
-- `source`（可选）：文档来源过滤，可选值为 wecom / feishu / dingtalk / xiaohongshu，不填搜索全部
+- `source`（可选）：文档来源过滤，可选值为 wecom / feishu / dingtalk / taobao / xiaohongshu，不填搜索全部
 - `mode`（可选，仅企业微信）：开发模式过滤，可选值为 internal（自建应用）/ third_party（第三方应用）/ service_provider（服务商代开发）
 - `limit`（可选）：返回数量，默认 5，最大 20
 
@@ -165,6 +165,7 @@ curl -s -G "http://specfusion.inagora.org/api/recent" \
    - 企业微信：https://developer.work.weixin.qq.com/document/
    - 飞书：https://open.feishu.cn/document/
    - 钉钉：https://open.dingtalk.com/document/
+   - 淘宝开放平台：https://open.taobao.com/api.htm
    - 小红书：https://open.xiaohongshu.com/document/api
 
 ## 定位说明
@@ -177,7 +178,8 @@ curl -s -G "http://specfusion.inagora.org/api/recent" \
 
 | 平台 | source 参数 | 文档数量 | 覆盖范围 |
 |------|-----------|---------|---------|
-| 企业微信 | wecom | ~2,760 | 服务端 API、客户端 API、应用开发 |
-| 飞书 | feishu | ~4,095 | 服务端 API、事件订阅、小程序 |
+| 企业微信 | wecom | ~2,680 | 服务端 API、客户端 API、应用开发 |
+| 飞书 | feishu | ~4,070 | 服务端 API、事件订阅、小程序 |
 | 钉钉 | dingtalk | ~2,020 | 企业内部应用、服务端 API、客户端 JSAPI |
-| 小红书 | xiaohongshu | ~200 | 电商开放平台 API（订单、商品、售后、物流等） |
+| 淘宝开放平台 | taobao | ~6,740 | 商品、交易、物流、店铺、用户等 API |
+| 小红书 | xiaohongshu | ~100 | 电商开放平台 API（订单、商品、售后、物流等） |
