@@ -1,3 +1,5 @@
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
@@ -10,8 +12,12 @@ import { healthRoutes } from './routes/health.js';
 import { categoriesRoutes } from './routes/categories.js';
 import { recentRoutes } from './routes/recent.js';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 const PORT = parseInt(process.env.PORT || '3456', 10);
-const DB_PATH = process.env.DB_PATH || './data/specfusion.db';
+// 默认路径基于源文件位置：api/src/ → ../../data/specfusion.db = 项目根 data/
+// Docker 中 api/dist/ → ../../data/specfusion.db = /app/data/ 同样正确
+const DB_PATH = process.env.DB_PATH || resolve(__dirname, '../../data/specfusion.db');
 
 async function main() {
   const fastify = Fastify({
