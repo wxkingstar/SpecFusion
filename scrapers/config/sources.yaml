@@ -36,3 +36,10 @@ sources:
     schedule: "0 6 * * 0"
     options:
       concurrency: 3
+
+  - id: douyin
+    name: 抖音电商开放平台
+    adapter: douyin
+    schedule: "0 7 * * 0"
+    options:
+      concurrency: 3

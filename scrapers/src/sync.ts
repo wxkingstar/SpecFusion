@@ -6,6 +6,7 @@ import { WecomSource } from './sources/wecom.js';
 import { DingtalkSource } from './sources/dingtalk.js';
 import { XiaohongshuSource } from './sources/xiaohongshu.js';
 import { TaobaoSource } from './sources/taobao.js';
+import { DouyinSource } from './sources/douyin.js';
 import { OpenAPISource } from './sources/openapi.js';
 
 // ── 默认值 ──────────────────────────────────────────────────────────────
@@ -22,6 +23,7 @@ const SOURCE_CONCURRENCY: Record<string, number> = {
   dingtalk: 1,
   xiaohongshu: 1,
   taobao: 1,
+  douyin: 3,
 };
 
 // ── Source 注册表 ────────────────────────────────────────────────────────
@@ -36,6 +38,7 @@ const SOURCE_REGISTRY: Record<string, SourceFactory> = {
   dingtalk: { create: () => new DingtalkSource() },
   xiaohongshu: { create: () => new XiaohongshuSource() },
   taobao: { create: () => new TaobaoSource() },
+  douyin: { create: () => new DouyinSource() },
 };
 
 export function registerOpenAPISource(
