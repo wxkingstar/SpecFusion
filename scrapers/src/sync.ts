@@ -7,6 +7,8 @@ import { DingtalkSource } from './sources/dingtalk.js';
 import { XiaohongshuSource } from './sources/xiaohongshu.js';
 import { TaobaoSource } from './sources/taobao.js';
 import { DouyinSource } from './sources/douyin.js';
+import { WechatMiniprogramSource } from './sources/wechat-miniprogram.js';
+import { WechatShopSource } from './sources/wechat-shop.js';
 import { OpenAPISource } from './sources/openapi.js';
 
 // ── 默认值 ──────────────────────────────────────────────────────────────
@@ -24,6 +26,8 @@ const SOURCE_CONCURRENCY: Record<string, number> = {
   xiaohongshu: 1,
   taobao: 1,
   douyin: 3,
+  'wechat-miniprogram': 4,
+  'wechat-shop': 4,
 };
 
 // ── Source 注册表 ────────────────────────────────────────────────────────
@@ -39,6 +43,8 @@ const SOURCE_REGISTRY: Record<string, SourceFactory> = {
   xiaohongshu: { create: () => new XiaohongshuSource() },
   taobao: { create: () => new TaobaoSource() },
   douyin: { create: () => new DouyinSource() },
+  'wechat-miniprogram': { create: () => new WechatMiniprogramSource() },
+  'wechat-shop': { create: () => new WechatShopSource() },
 };
 
 export function registerOpenAPISource(
