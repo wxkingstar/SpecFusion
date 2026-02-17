@@ -1,22 +1,22 @@
 ---
 name: specfusion
 description: |
-  搜索企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台等开放平台的 API 文档。当用户询问以下内容时自动触发：
-  - 企业微信/飞书/钉钉/淘宝/小红书/抖音电商/微信小程序/微信小店/拼多多等平台的 API 用法、参数、接口说明
+  搜索企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台等开放平台的 API 文档。当用户询问以下内容时自动触发：
+  - 企业微信/飞书/钉钉/淘宝/小红书/抖音电商/微信小程序/微信小店/拼多多/有赞等平台的 API 用法、参数、接口说明
   - 如何调用某个开放平台接口（发消息、获取用户、创建审批等）
   - 开放平台的 webhook、回调、事件订阅配置
   - OAuth、授权、access_token 获取流程
   - 任何涉及第三方平台 OpenAPI 规范的开发问题
-  触发关键词：企业微信、飞书、钉钉、淘宝、小红书、抖音电商、抖店、微信小程序、小程序、微信小店、小店、拼多多、pdd、开放平台、API文档、接口文档、
-  wecom、feishu、lark、dingtalk、taobao、xiaohongshu、xhs、douyin、jinritemai、wechat、miniprogram、wechat-shop、channels、pinduoduo、电商开放平台、openapi、webhook、access_token
+  触发关键词：企业微信、飞书、钉钉、淘宝、小红书、抖音电商、抖店、微信小程序、小程序、微信小店、小店、拼多多、pdd、有赞、youzan、开放平台、API文档、接口文档、
+  wecom、feishu、lark、dingtalk、taobao、xiaohongshu、xhs、douyin、jinritemai、wechat、miniprogram、wechat-shop、channels、pinduoduo、youzanyun、电商开放平台、openapi、webhook、access_token
 user-invocable: true
-argument-hint: "企业微信发送消息 / feishu 审批 / 淘宝商品发布 / 小红书订单 / 抖音电商订单 / 微信小程序登录 / 微信小店订单 / 拼多多订单 / 搜索关键词"
+argument-hint: "企业微信发送消息 / feishu 审批 / 淘宝商品发布 / 小红书订单 / 抖音电商订单 / 微信小程序登录 / 微信小店订单 / 拼多多订单 / 有赞交易 / 搜索关键词"
 allowed-tools: Bash, Read
 ---
 
 # SpecFusion — 多源 API 文档搜索
 
-你可以通过云端 API 搜索企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台等平台的开发文档。
+你可以通过云端 API 搜索企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台等平台的开发文档。
 
 ## API 端点
 
@@ -39,7 +39,7 @@ curl -s -G "http://specfusion.inagora.org/api/search" \
   - API 路径搜索：`/cgi-bin/message/send`、`/open-apis/contact/v3/users`
   - 错误码搜索：`60011`、`40001`、`errcode 40001`
   - 功能概念搜索：`客户联系`、`会话存档`、`消息卡片`
-- `source`（可选）：文档来源过滤，可选值为 wecom / feishu / dingtalk / taobao / xiaohongshu / douyin / wechat-miniprogram / wechat-shop / pinduoduo，不填搜索全部
+- `source`（可选）：文档来源过滤，可选值为 wecom / feishu / dingtalk / taobao / xiaohongshu / douyin / wechat-miniprogram / wechat-shop / pinduoduo / youzan，不填搜索全部
 - `mode`（可选，仅企业微信）：开发模式过滤，可选值为 internal（自建应用）/ third_party（第三方应用）/ service_provider（服务商代开发）
 - `limit`（可选）：返回数量，默认 5，最大 20
 
@@ -171,6 +171,7 @@ curl -s -G "http://specfusion.inagora.org/api/recent" \
    - 微信小程序：https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/
    - 微信小店：https://developers.weixin.qq.com/doc/store/shop/
    - 拼多多开放平台：https://open.pinduoduo.com/application/document/api
+   - 有赞开放平台：https://doc.youzanyun.com/list/API/
 
 ## 定位说明
 
@@ -191,3 +192,4 @@ curl -s -G "http://specfusion.inagora.org/api/recent" \
 | 微信小程序 | wechat-miniprogram | ~280 | 服务端 API（登录、用户信息、小程序码、客服、数据分析、安全、物流等） |
 | 微信小店 | wechat-shop | ~480 | 商品管理、订单管理、售后管理、物流发货、资金结算、营销优惠券、品牌资质、事件通知等 API |
 | 拼多多开放平台 | pinduoduo | ~280 | 订单、商品、物流、售后、营销、店铺、虚拟类目、多多进宝等 API |
+| 有赞开放平台 | youzan | ~1,240 | 用户、会员、商品、交易、物流、营销、店铺、分销、财务、美业等 API |

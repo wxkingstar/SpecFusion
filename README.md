@@ -1,6 +1,6 @@
 # SpecFusion
 
-**在 Claude Code 里直接搜企业微信、飞书、钉钉、淘宝开放平台、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台的 API 文档。**
+**在 Claude Code 里直接搜企业微信、飞书、钉钉、淘宝开放平台、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台的 API 文档。**
 
 不用切浏览器，不用翻文档站——输入问题，拿到接口参数，继续写代码。
 
@@ -17,7 +17,7 @@
 
 - **不离开终端** — 写代码时直接问，Claude 帮你查文档、给出接口参数和示例
 - **中文搜索准确** — jieba 分词 + FTS5 全文索引，`发送应用消息`、`access_token`、`40001` 都能搜到
-- **17,900+ 篇文档** — 企业微信 ~2,680 篇 + 飞书 ~4,070 篇 + 钉钉 ~2,020 篇 + 淘宝 ~6,740 篇 + 小红书 ~100 篇 + 抖音电商 ~1,280 篇 + 微信小程序 ~280 篇 + 微信小店 ~480 篇 + 拼多多 ~280 篇，接口参数、错误码、事件订阅全覆盖
+- **19,100+ 篇文档** — 企业微信 ~2,680 篇 + 飞书 ~4,070 篇 + 钉钉 ~2,020 篇 + 淘宝 ~6,740 篇 + 小红书 ~100 篇 + 抖音电商 ~1,280 篇 + 微信小程序 ~280 篇 + 微信小店 ~480 篇 + 拼多多 ~280 篇 + 有赞 ~1,240 篇，接口参数、错误码、事件订阅全覆盖
 - **零配置** — 云端服务已部署好，安装 Skill 后即可使用，无需自建后端
 
 ## 安装
@@ -43,7 +43,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 
 ## 使用方式
 
-**方式一：直接提问**（提到企业微信、飞书、钉钉、淘宝、微信小程序、微信小店、拼多多等关键词时自动触发）
+**方式一：直接提问**（提到企业微信、飞书、钉钉、淘宝、微信小程序、微信小店、拼多多、有赞等关键词时自动触发）
 
 ```
 > 飞书如何创建审批实例？
@@ -54,6 +54,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 > 微信小程序怎么获取手机号？
 > 微信小店怎么获取订单列表？
 > 拼多多怎么同步订单？
+> 有赞怎么查询交易订单？
 > wecom webhook 怎么发消息？
 ```
 
@@ -76,6 +77,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 | 抖音电商开放平台 | ~1,280 | 商品、订单、物流、售后、精选联盟、即时零售等 API |
 | 微信小店 | ~480 | 商品管理、订单管理、售后管理、物流发货、资金结算、营销优惠券等 API |
 | 拼多多开放平台 | ~280 | 订单、商品、物流、售后、营销、店铺、虚拟类目、多多进宝等 API |
+| 有赞开放平台 | ~1,240 | 用户、会员、商品、交易、物流、营销、店铺、分销、财务、美业等 API |
 
 ## 仅在当前项目安装
 
@@ -144,6 +146,7 @@ npm run sync -- --source taobao    # 同步淘宝开放平台文档
 npm run sync -- --source douyin    # 同步抖音电商开放平台文档
 npm run sync -- --source wechat-shop  # 同步微信小店文档
 npm run sync -- --source pinduoduo   # 同步拼多多开放平台文档（需先导出 JSON）
+npm run sync -- --source youzan      # 同步有赞开放平台文档
 ```
 
 同步完成后数据库文件位于 `data/specfusion.db`。
@@ -177,7 +180,7 @@ Base URL: `http://localhost:3456/api`（自部署）
 | 参数 | 必填 | 说明 |
 |------|------|------|
 | `q` | 是 | 搜索关键词（接口名、API 路径、错误码、功能概念） |
-| `source` | 否 | 文档来源：`wecom` / `feishu` / `dingtalk` / `taobao` / `xiaohongshu` / `douyin` / `wechat-shop` / `pinduoduo` |
+| `source` | 否 | 文档来源：`wecom` / `feishu` / `dingtalk` / `taobao` / `xiaohongshu` / `douyin` / `wechat-shop` / `pinduoduo` / `youzan` |
 | `mode` | 否 | 开发模式（仅企业微信）：`internal` / `third_party` / `service_provider` |
 | `limit` | 否 | 返回数量，默认 5，最大 20 |
 

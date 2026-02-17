@@ -50,9 +50,9 @@ verify: ## 健康检查（最多重试 30s）
 	echo "✗ 健康检查失败"; exit 1
 
 # ─── 文档同步（需先 npm run dev 启动本地服务）──────
-.PHONY: sync sync-feishu sync-wecom sync-dingtalk sync-xiaohongshu sync-taobao sync-douyin sync-wechat-miniprogram sync-wechat-shop sync-pinduoduo
+.PHONY: sync sync-feishu sync-wecom sync-dingtalk sync-xiaohongshu sync-taobao sync-douyin sync-wechat-miniprogram sync-wechat-shop sync-pinduoduo sync-youzan
 
-sync: sync-feishu sync-wecom sync-dingtalk sync-xiaohongshu sync-taobao sync-douyin sync-wechat-miniprogram sync-wechat-shop sync-pinduoduo ## 同步全部源到 data/specfusion.db
+sync: sync-feishu sync-wecom sync-dingtalk sync-xiaohongshu sync-taobao sync-douyin sync-wechat-miniprogram sync-wechat-shop sync-pinduoduo sync-youzan ## 同步全部源到 data/specfusion.db
 
 sync-feishu: ## 同步飞书文档
 	npm run sync -- --source feishu
@@ -80,6 +80,9 @@ sync-wechat-shop: ## 同步微信小店文档
 
 sync-pinduoduo: ## 同步拼多多开放平台文档（需先导出 JSON 到 scrapers/data/）
 	npm run sync -- --source pinduoduo
+
+sync-youzan: ## 同步有赞开放平台文档
+	npm run sync -- --source youzan
 
 # ─── 数据库上传到 K8s ────────────────────────────────
 .PHONY: upload-db
