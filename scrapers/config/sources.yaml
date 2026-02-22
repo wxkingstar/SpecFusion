@@ -50,3 +50,10 @@ sources:
     schedule: "0 8 * * 0"
     options:
       concurrency: 3
+
+  - id: alipay
+    name: 支付宝开放平台
+    adapter: alipay
+    schedule: "0 9 * * 0"
+    options:
+      concurrency: 3

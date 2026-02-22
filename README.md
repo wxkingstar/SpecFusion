@@ -1,6 +1,6 @@
 # SpecFusion
 
-**在 Claude Code 里直接搜企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付的 API 文档。**
+**在 Claude Code 里直接搜企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付、支付宝开放平台的 API 文档。**
 
 不用切浏览器，不用翻文档站——输入问题，拿到接口参数，继续写代码。
 
@@ -43,7 +43,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 
 ## 使用方式
 
-**方式一：直接提问**（提到企业微信、飞书、钉钉、淘宝、小红书、抖音电商、微信小程序、微信小店、拼多多、有赞、微信支付等关键词时自动触发）
+**方式一：直接提问**（提到企业微信、飞书、钉钉、淘宝、小红书、抖音电商、微信小程序、微信小店、拼多多、有赞、微信支付、支付宝等关键词时自动触发）
 
 ```
 > 飞书如何创建审批实例？
@@ -57,6 +57,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 > 有赞怎么查询交易订单？
 > wecom webhook 怎么发消息？
 > 微信支付JSAPI下单接口怎么调？
+> 支付宝当面付接口怎么用？
 ```
 
 **方式二：使用 `/specfusion` 命令**
@@ -81,6 +82,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 | 拼多多开放平台 | ~280 | 订单、商品、物流、售后、营销、店铺、虚拟类目、多多进宝等 API |
 | 有赞开放平台 | ~1,240 | 用户、会员、商品、交易、物流、营销、店铺、分销、财务、美业等 API |
 | 微信支付 | ~540 | JSAPI/APP/H5/Native/小程序支付、退款、分账、合单支付、代金券、商家转账等 API |
+| 支付宝开放平台 | - | 当面付、APP支付、手机网站支付、电脑网站支付、资金、会员、营销、安全等 API |
 
 ## 仅在当前项目安装
 
@@ -153,6 +155,7 @@ npm run sync -- --source wechat-shop  # 同步微信小店文档
 npm run sync -- --source pinduoduo   # 同步拼多多开放平台文档（需先导出 JSON）
 npm run sync -- --source youzan      # 同步有赞开放平台文档
 npm run sync -- --source wechat-pay  # 同步微信支付文档
+npm run sync -- --source alipay      # 同步支付宝开放平台文档
 ```
 
 同步完成后数据库文件位于 `data/specfusion.db`。
@@ -186,7 +189,7 @@ Base URL: `http://localhost:3456/api`（自部署）
 | 参数 | 必填 | 说明 |
 |------|------|------|
 | `q` | 是 | 搜索关键词（接口名、API 路径、错误码、功能概念） |
-| `source` | 否 | 文档来源：`wecom` / `feishu` / `dingtalk` / `taobao` / `xiaohongshu` / `douyin` / `wechat-miniprogram` / `wechat-shop` / `pinduoduo` / `youzan` / `wechat-pay` |
+| `source` | 否 | 文档来源：`wecom` / `feishu` / `dingtalk` / `taobao` / `xiaohongshu` / `douyin` / `wechat-miniprogram` / `wechat-shop` / `pinduoduo` / `youzan` / `wechat-pay` / `alipay` |
 | `mode` | 否 | 开发模式（仅企业微信）：`internal` / `third_party` / `service_provider` |
 | `limit` | 否 | 返回数量，默认 5，最大 20 |
 
