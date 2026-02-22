@@ -8,6 +8,7 @@ import type { DocSource, DocEntry, DocContent } from '../types.js';
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const BASE_URL = 'https://opendocs.alipay.com';
+const CMS_API_URL = 'https://ideservice.alipay.com';
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
 
@@ -265,6 +266,7 @@ export class AlipaySource implements DocSource {
   private requestCount = 0;
   /** repoCode → repoName (面包屑中的产品名) */
   private repoNameMap = new Map<string, string>();
+  private cmsClient: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
@@ -274,6 +276,15 @@ export class AlipaySource implements DocSource {
         Accept: 'application/json, text/plain, */*',
         'Accept-Language': 'zh-CN,zh;q=0.9',
         Referer: `${BASE_URL}/open/`,
+      },
+      timeout: 30_000,
+    });
+    this.cmsClient = axios.create({
+      baseURL: CMS_API_URL,
+      headers: {
+        'User-Agent': USER_AGENT,
+        'Content-Type': 'application/json',
+        Referer: `${BASE_URL}/`,
       },
       timeout: 30_000,
     });
@@ -372,6 +383,37 @@ export class AlipaySource implements DocSource {
 
     // 不应到达此处
     throw new Error('fetchDocContent: 超出重试次数');
+  }
+
+  /**
+   * CMS 降级 API：通过 ideservice.alipay.com 获取文档内容。
+   * 当 /api/content/ 返回 apiUrl:refer / relateUrl:refer 宏渲染错误时使用。
+   * 该 API 返回原始 Lake HTML（larkRawText），不经过宏展开，因此不会报错。
+   * mainSiteCode 固定为 0038n9（开放平台主站点），所有 repo 的文档均可通过此值获取。
+   */
+  private async fetchDocContentViaCMS(
+    catalogCode: string,
+  ): Promise<{ title: string; html: string; repoName?: string; gmtModified?: string }> {
+    await this.throttle(500); // CMS API 限流独立于 content API
+    const resp = await this.cmsClient.post('/cms/site/queryCatalogContent.json', {
+      mainSiteCode: '0038n9',
+      catalogCode,
+      extReqData: { targetStation: null },
+    });
+
+    const data = resp.data?.data?.content;
+    if (!data) {
+      throw new Error(`CMS API 返回空内容: ${catalogCode}`);
+    }
+
+    return {
+      title: data.catalog?.catalogName || data.title || '',
+      html: data.larkRawText || data.text || '',
+      repoName: data.catalog?.repoCode
+        ? this.repoNameMap.get(data.catalog.repoCode)
+        : undefined,
+      gmtModified: data.gmtModified,
+    };
   }
 
   // ─── Catalog tree traversal ────────────────────────────────────────────
@@ -509,35 +551,46 @@ export class AlipaySource implements DocSource {
       throw new Error(`Missing platformId for entry: ${entry.title}`);
     }
 
-    const resp = await this.fetchDocContent(catalogCode);
-    if (!resp.success || !resp.result) {
-      throw new Error(
-        `获取文档 ${catalogCode} 内容失败: ${JSON.stringify(resp.errorContext || 'unknown')}`,
-      );
-    }
+    // 先尝试 /api/content/ （返回渲染后的 HTML，质量更高）
+    let title: string;
+    let html: string;
+    let repoName: string | undefined;
+    let gmtModified: string | undefined;
 
-    const result = resp.result;
+    try {
+      const resp = await this.fetchDocContent(catalogCode);
+      if (!resp.success || !resp.result) {
+        // 服务端宏渲染错误（apiUrl:refer / relateUrl:refer），降级到 CMS API
+        const cms = await this.fetchDocContentViaCMS(catalogCode);
+        title = cms.title || entry.title;
+        html = cms.html;
+        repoName = cms.repoName;
+        gmtModified = cms.gmtModified;
+      } else {
+        const result = resp.result;
+        title = result.title || result.catalog?.catalogName || entry.title;
+        html = result.text || '';
+        repoName = resp.breadCrumbs?.repoName;
+        gmtModified = result.gmtModified;
+      }
+    } catch {
+      // 被限流等网络错误，也尝试 CMS API 降级
+      const cms = await this.fetchDocContentViaCMS(catalogCode);
+      title = cms.title || entry.title;
+      html = cms.html;
+      repoName = cms.repoName;
+      gmtModified = cms.gmtModified;
+    }
 
     // Build Markdown from content
     const sections: string[] = [];
-
-    // Title
-    const title = result.title || result.catalog?.catalogName || entry.title;
     sections.push(`# ${title}\n`);
-
-    // Breadcrumb / category
-    if (resp.breadCrumbs?.repoName) {
-      sections.push(`产品：${resp.breadCrumbs.repoName}\n`);
+    if (repoName) {
+      sections.push(`产品：${repoName}\n`);
     }
 
-    // Keywords
-    if (result.catalog?.keywords) {
-      sections.push(`关键词：${result.catalog.keywords}\n`);
-    }
-
-    // Main content (HTML → Markdown)
-    if (result.text) {
-      const md = htmlToMarkdown(result.text);
+    if (html) {
+      const md = htmlToMarkdown(html);
       if (md) {
         sections.push(md);
       }
@@ -545,7 +598,6 @@ export class AlipaySource implements DocSource {
 
     const markdown = sections.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 
-    // Tokenize for FTS
     const tokenizedTitle = tokenize(title);
     const tokenizedContent = tokenize(markdown);
 
@@ -554,8 +606,8 @@ export class AlipaySource implements DocSource {
       tokenizedContent,
     };
 
-    if (result.gmtModified) {
-      const date = new Date(result.gmtModified);
+    if (gmtModified) {
+      const date = new Date(gmtModified);
       if (!isNaN(date.getTime())) {
         metadata.lastUpdated = date.toISOString().split('T')[0];
       }
