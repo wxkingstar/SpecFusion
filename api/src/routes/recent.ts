@@ -12,6 +12,7 @@ const SOURCE_NAME_MAP: Record<string, string> = {
   'wechat-shop': '微信小店',
   pinduoduo: '拼多多开放平台',
   youzan: '有赞开放平台',
+  'wechat-pay': '微信支付',
 };
 
 function sourceName(sourceId: string): string {

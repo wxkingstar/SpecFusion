@@ -43,3 +43,10 @@ sources:
     schedule: "0 7 * * 0"
     options:
       concurrency: 3
+
+  - id: wechat-pay
+    name: 微信支付
+    adapter: wechat-pay
+    schedule: "0 8 * * 0"
+    options:
+      concurrency: 3
