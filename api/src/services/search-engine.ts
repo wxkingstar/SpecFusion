@@ -10,6 +10,13 @@ const SOURCE_NAME_MAP: Record<string, string> = {
   wecom: '企业微信',
   feishu: '飞书',
   dingtalk: '钉钉',
+  taobao: '淘宝开放平台',
+  xiaohongshu: '小红书',
+  douyin: '抖音电商开放平台',
+  'wechat-miniprogram': '微信小程序',
+  'wechat-shop': '微信小店',
+  pinduoduo: '拼多多开放平台',
+  youzan: '有赞开放平台',
 };
 
 function sourceName(sourceId: string): string {

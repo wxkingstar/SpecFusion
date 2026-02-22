@@ -1,6 +1,6 @@
 # SpecFusion
 
-**在 Claude Code 里直接搜企业微信、飞书、钉钉、淘宝开放平台、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台的 API 文档。**
+**在 Claude Code 里直接搜企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台的 API 文档。**
 
 不用切浏览器，不用翻文档站——输入问题，拿到接口参数，继续写代码。
 
@@ -43,7 +43,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 
 ## 使用方式
 
-**方式一：直接提问**（提到企业微信、飞书、钉钉、淘宝、微信小程序、微信小店、拼多多、有赞等关键词时自动触发）
+**方式一：直接提问**（提到企业微信、飞书、钉钉、淘宝、小红书、抖音电商、微信小程序、微信小店、拼多多、有赞等关键词时自动触发）
 
 ```
 > 飞书如何创建审批实例？
@@ -75,6 +75,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 | 淘宝开放平台 | ~6,740 | 商品、交易、物流、店铺、用户等 API |
 | 小红书 | ~100 | 电商开放平台 API（订单、商品、售后、物流等） |
 | 抖音电商开放平台 | ~1,280 | 商品、订单、物流、售后、精选联盟、即时零售等 API |
+| 微信小程序 | ~280 | 服务端 API（登录、用户信息、小程序码、客服、数据分析、安全、物流等） |
 | 微信小店 | ~480 | 商品管理、订单管理、售后管理、物流发货、资金结算、营销优惠券等 API |
 | 拼多多开放平台 | ~280 | 订单、商品、物流、售后、营销、店铺、虚拟类目、多多进宝等 API |
 | 有赞开放平台 | ~1,240 | 用户、会员、商品、交易、物流、营销、店铺、分销、财务、美业等 API |
@@ -143,7 +144,9 @@ npm run sync -- --source feishu    # 同步飞书文档
 npm run sync -- --source wecom     # 同步企业微信文档
 npm run sync -- --source dingtalk  # 同步钉钉文档（需要 playwright）
 npm run sync -- --source taobao    # 同步淘宝开放平台文档
+npm run sync -- --source xiaohongshu  # 同步小红书文档
 npm run sync -- --source douyin    # 同步抖音电商开放平台文档
+npm run sync -- --source wechat-miniprogram  # 同步微信小程序文档
 npm run sync -- --source wechat-shop  # 同步微信小店文档
 npm run sync -- --source pinduoduo   # 同步拼多多开放平台文档（需先导出 JSON）
 npm run sync -- --source youzan      # 同步有赞开放平台文档
@@ -180,7 +183,7 @@ Base URL: `http://localhost:3456/api`（自部署）
 | 参数 | 必填 | 说明 |
 |------|------|------|
 | `q` | 是 | 搜索关键词（接口名、API 路径、错误码、功能概念） |
-| `source` | 否 | 文档来源：`wecom` / `feishu` / `dingtalk` / `taobao` / `xiaohongshu` / `douyin` / `wechat-shop` / `pinduoduo` / `youzan` |
+| `source` | 否 | 文档来源：`wecom` / `feishu` / `dingtalk` / `taobao` / `xiaohongshu` / `douyin` / `wechat-miniprogram` / `wechat-shop` / `pinduoduo` / `youzan` |
 | `mode` | 否 | 开发模式（仅企业微信）：`internal` / `third_party` / `service_provider` |
 | `limit` | 否 | 返回数量，默认 5，最大 20 |
 
