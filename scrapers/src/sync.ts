@@ -12,6 +12,7 @@ import { WechatShopSource } from './sources/wechat-shop.js';
 import { PinduoduoSource } from './sources/pinduoduo.js';
 import { YouzanSource } from './sources/youzan.js';
 import { WechatPaySource } from './sources/wechat-pay.js';
+import { AlipaySource } from './sources/alipay.js';
 import { OpenAPISource } from './sources/openapi.js';
 
 // ── 默认值 ──────────────────────────────────────────────────────────────
@@ -34,6 +35,7 @@ const SOURCE_CONCURRENCY: Record<string, number> = {
   pinduoduo: 3,
   youzan: 3,
   'wechat-pay': 3,
+  alipay: 3,
 };
 
 // ── Source 注册表 ────────────────────────────────────────────────────────
@@ -54,6 +56,7 @@ const SOURCE_REGISTRY: Record<string, SourceFactory> = {
   pinduoduo: { create: () => new PinduoduoSource() },
   youzan: { create: () => new YouzanSource() },
   'wechat-pay': { create: () => new WechatPaySource() },
+  alipay: { create: () => new AlipaySource() },
 };
 
 export function registerOpenAPISource(
