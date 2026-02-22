@@ -11,8 +11,8 @@ const BASE_URL = 'https://opendocs.alipay.com';
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
 
-/** 请求间隔（ms）— 支付宝对 API 调用有频率限制，过快会返回 HTML 拦截页 */
-const REQUEST_DELAY = 500;
+/** 请求间隔（ms）— 支付宝 /api/content/ 有严格频率限制，过快会触发 netd 拦截 */
+const REQUEST_DELAY = 1500;
 
 /** 被限流后的退避等待（ms） */
 const RATE_LIMIT_BACKOFF = 10_000;
@@ -281,12 +281,12 @@ export class AlipaySource implements DocSource {
 
   // ─── Rate limiting ─────────────────────────────────────────────────────
 
-  private async throttle(): Promise<void> {
+  private async throttle(ms: number = REQUEST_DELAY): Promise<void> {
     this.requestCount++;
     if (this.requestCount % 50 === 0) {
       console.log(`[alipay] 已发送 ${this.requestCount} 个请求`);
     }
-    await delay(REQUEST_DELAY);
+    await delay(ms);
   }
 
   // ─── API calls ─────────────────────────────────────────────────────────
@@ -315,7 +315,7 @@ export class AlipaySource implements DocSource {
   /** 获取指定 repo 的完整目录树（含限流重试） */
   private async fetchCatalogTree(repoCode: string): Promise<AlipayCatalogNode | null> {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      await this.throttle();
+      await this.throttle(300); // catalog API 限流较松
       try {
         const resp = await this.client.get(`/api/catalog/${repoCode}`, {
           params: { repoCode },
