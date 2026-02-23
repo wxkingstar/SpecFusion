@@ -57,3 +57,10 @@ sources:
     schedule: "0 9 * * 0"
     options:
       concurrency: 3
+
+  - id: jd
+    name: 京东商家开放平台
+    adapter: jd
+    schedule: "0 10 * * 0"
+    options:
+      concurrency: 1
