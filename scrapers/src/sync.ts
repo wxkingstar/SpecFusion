@@ -15,6 +15,7 @@ import { WechatPaySource } from './sources/wechat-pay.js';
 import { AlipaySource } from './sources/alipay.js';
 import { JdSource } from './sources/jd.js';
 import { SheinSource } from './sources/shein.js';
+import { DewuSource } from './sources/dewu.js';
 import { OpenAPISource } from './sources/openapi.js';
 
 // ── 默认值 ──────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ const SOURCE_CONCURRENCY: Record<string, number> = {
   alipay: 3,
   jd: 1,  // Playwright 串行导航
   shein: 3,
+  dewu: 1, // Playwright 串行导航
 };
 
 // ── Source 注册表 ────────────────────────────────────────────────────────
@@ -63,6 +65,7 @@ const SOURCE_REGISTRY: Record<string, SourceFactory> = {
   alipay: { create: () => new AlipaySource() },
   jd: { create: () => new JdSource() },
   shein: { create: () => new SheinSource() },
+  dewu: { create: () => new DewuSource() },
 };
 
 export function registerOpenAPISource(

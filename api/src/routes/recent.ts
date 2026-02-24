@@ -16,6 +16,7 @@ const SOURCE_NAME_MAP: Record<string, string> = {
   alipay: '支付宝开放平台',
   jd: '京东商家开放平台',
   shein: 'SHEIN开放平台',
+  dewu: '得物开放平台',
 };
 
 function sourceName(sourceId: string): string {

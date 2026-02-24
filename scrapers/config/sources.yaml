@@ -71,3 +71,10 @@ sources:
     schedule: "0 11 * * 0"
     options:
       concurrency: 3
+
+  - id: dewu
+    name: 得物开放平台
+    adapter: dewu
+    schedule: "0 12 * * 0"
+    options:
+      concurrency: 1  # Playwright 串行
