@@ -1,22 +1,22 @@
 ---
 name: specfusion
 description: |
-  搜索企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付、支付宝开放平台、京东商家开放平台等开放平台的 API 文档。当用户询问以下内容时自动触发：
-  - 企业微信/飞书/钉钉/淘宝/小红书/抖音电商/微信小程序/微信小店/拼多多/有赞/微信支付/支付宝/京东等平台的 API 用法、参数、接口说明
+  搜索企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付、支付宝开放平台、京东商家开放平台、SHEIN开放平台等开放平台的 API 文档。当用户询问以下内容时自动触发：
+  - 企业微信/飞书/钉钉/淘宝/小红书/抖音电商/微信小程序/微信小店/拼多多/有赞/微信支付/支付宝/京东/SHEIN等平台的 API 用法、参数、接口说明
   - 如何调用某个开放平台接口（发消息、获取用户、创建审批等）
   - 开放平台的 webhook、回调、事件订阅配置
   - OAuth、授权、access_token 获取流程
   - 任何涉及第三方平台 OpenAPI 规范的开发问题
-  触发关键词：企业微信、飞书、钉钉、淘宝、小红书、抖音电商、抖店、微信小程序、小程序、微信小店、小店、拼多多、pdd、有赞、youzan、微信支付、wechat-pay、wechatpay、支付宝、alipay、京东、jd、京东开放平台、开放平台、API文档、接口文档、
+  触发关键词：企业微信、飞书、钉钉、淘宝、小红书、抖音电商、抖店、微信小程序、小程序、微信小店、小店、拼多多、pdd、有赞、youzan、微信支付、wechat-pay、wechatpay、支付宝、alipay、京东、jd、京东开放平台、SHEIN、shein、sheincorp、开放平台、API文档、接口文档、
   wecom、feishu、lark、dingtalk、taobao、xiaohongshu、xhs、douyin、jinritemai、wechat、miniprogram、wechat-shop、channels、pinduoduo、youzanyun、电商开放平台、openapi、webhook、access_token
 user-invocable: true
-argument-hint: "企业微信发送消息 / feishu 审批 / 淘宝商品发布 / 小红书订单 / 抖音电商订单 / 微信小程序登录 / 微信小店订单 / 拼多多订单 / 有赞交易 / 微信支付JSAPI下单 / 支付宝当面付 / 京东商品API / 搜索关键词"
+argument-hint: "企业微信发送消息 / feishu 审批 / 淘宝商品发布 / 小红书订单 / 抖音电商订单 / 微信小程序登录 / 微信小店订单 / 拼多多订单 / 有赞交易 / 微信支付JSAPI下单 / 支付宝当面付 / 京东商品API / SHEIN商品发布 / 搜索关键词"
 allowed-tools: Bash, Read
 ---
 
 # SpecFusion — 多源 API 文档搜索
 
-你可以通过云端 API 搜索企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付、支付宝开放平台、京东商家开放平台等平台的开发文档。
+你可以通过云端 API 搜索企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付、支付宝开放平台、京东商家开放平台、SHEIN开放平台等平台的开发文档。
 
 ## API 端点
 
@@ -39,7 +39,7 @@ curl -s -G "http://specfusion.inagora.org/api/search" \
   - API 路径搜索：`/cgi-bin/message/send`、`/open-apis/contact/v3/users`
   - 错误码搜索：`60011`、`40001`、`errcode 40001`
   - 功能概念搜索：`客户联系`、`会话存档`、`消息卡片`
-- `source`（可选）：文档来源过滤，可选值为 wecom / feishu / dingtalk / taobao / xiaohongshu / douyin / wechat-miniprogram / wechat-shop / pinduoduo / youzan / wechat-pay / alipay / jd，不填搜索全部
+- `source`（可选）：文档来源过滤，可选值为 wecom / feishu / dingtalk / taobao / xiaohongshu / douyin / wechat-miniprogram / wechat-shop / pinduoduo / youzan / wechat-pay / alipay / jd / shein，不填搜索全部
 - `mode`（可选，仅企业微信）：开发模式过滤，可选值为 internal（自建应用）/ third_party（第三方应用）/ service_provider（服务商代开发）
 - `limit`（可选）：返回数量，默认 5，最大 20
 
@@ -175,6 +175,7 @@ curl -s -G "http://specfusion.inagora.org/api/recent" \
    - 微信支付：https://pay.weixin.qq.com/doc/v3/merchant/4012062524
    - 支付宝开放平台：https://opendocs.alipay.com/open/
    - 京东商家开放平台：https://open.jd.com/v2/#/doc/api
+   - SHEIN开放平台：https://open.sheincorp.com/documents/apidoc/detail/3001520
 
 ## 定位说明
 
@@ -199,3 +200,4 @@ curl -s -G "http://specfusion.inagora.org/api/recent" \
 | 微信支付 | wechat-pay | ~540 | JSAPI/APP/H5/Native/小程序支付、退款、分账、合单支付、代金券、商家转账等 API |
 | 支付宝开放平台 | alipay | ~600 | 当面付、APP支付、手机网站支付、电脑网站支付、资金、会员、营销、安全等 API |
 | 京东商家开放平台 | jd | ~6,100 | 商品、订单、物流、售后、促销、店铺、数据、发票、供应商等 API |
+| SHEIN开放平台 | shein | ~190 | 密钥授权、商品、订单、退货退款、采购单、库存、财务、物流、Webhook 等 API |

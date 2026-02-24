@@ -64,3 +64,10 @@ sources:
     schedule: "0 10 * * 0"
     options:
       concurrency: 1
+
+  - id: shein
+    name: SHEIN开放平台
+    adapter: shein
+    schedule: "0 11 * * 0"
+    options:
+      concurrency: 3

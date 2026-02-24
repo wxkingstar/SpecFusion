@@ -15,6 +15,7 @@ const SOURCE_NAME_MAP: Record<string, string> = {
   'wechat-pay': '微信支付',
   alipay: '支付宝开放平台',
   jd: '京东商家开放平台',
+  shein: 'SHEIN开放平台',
 };
 
 function sourceName(sourceId: string): string {
