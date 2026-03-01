@@ -24,18 +24,26 @@
 
 前提：已安装 [Claude Code](https://docs.anthropic.com/en/docs/claude-code)。
 
-### macOS / Linux
+### 方式一：skills CLI（推荐）
+
+```bash
+npx skills add wxkingstar/SpecFusion
+```
+
+### 方式二：手动安装
+
+**macOS / Linux：**
 
 ```bash
 curl -fsSL --create-dirs -o ~/.claude/skills/specfusion/SKILL.md \
-  https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/skill/SKILL.md
+  https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/skills/specfusion/SKILL.md
 ```
 
-### Windows (PowerShell)
+**Windows (PowerShell)：**
 
 ```powershell
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\skills\specfusion" | Out-Null
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/skill/SKILL.md" `
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/skills/specfusion/SKILL.md" `
   -OutFile "$env:USERPROFILE\.claude\skills\specfusion\SKILL.md"
 ```
 
@@ -96,13 +104,13 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 **macOS / Linux：**
 ```bash
 curl -fsSL --create-dirs -o .claude/skills/specfusion/SKILL.md \
-  https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/skill/SKILL.md
+  https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/skills/specfusion/SKILL.md
 ```
 
 **Windows (PowerShell)：**
 ```powershell
 New-Item -ItemType Directory -Force -Path ".claude\skills\specfusion" | Out-Null
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/skill/SKILL.md" `
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/skills/specfusion/SKILL.md" `
   -OutFile ".claude\skills\specfusion\SKILL.md"
 ```
 

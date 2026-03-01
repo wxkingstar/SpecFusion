@@ -1,6 +1,7 @@
 ---
 name: specfusion
 description: |
+  Search API documentation for 15 Chinese open platforms: WeCom (企业微信), Feishu/Lark (飞书), DingTalk (钉钉), Taobao (淘宝), Xiaohongshu (小红书), Douyin E-commerce (抖音电商), WeChat Mini Program (微信小程序), WeChat Shop (微信小店), Pinduoduo (拼多多), Youzan (有赞), WeChat Pay (微信支付), Alipay (支付宝), JD (京东), SHEIN, Dewu (得物). 26,000+ API docs with Chinese full-text search.
   搜索企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付、支付宝开放平台、京东商家开放平台、SHEIN开放平台、得物开放平台等开放平台的 API 文档。当用户询问以下内容时自动触发：
   - 企业微信/飞书/钉钉/淘宝/小红书/抖音电商/微信小程序/微信小店/拼多多/有赞/微信支付/支付宝/京东/SHEIN/得物等平台的 API 用法、参数、接口说明
   - 如何调用某个开放平台接口（发消息、获取用户、创建审批等）
