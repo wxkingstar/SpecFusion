@@ -22,15 +22,21 @@
 
 ## 安装
 
-前提：已安装 [Claude Code](https://docs.anthropic.com/en/docs/claude-code)。
-
 ### 方式一：skills CLI（推荐）
+
+自动检测已安装的 Agent，一键安装到 Claude Code、Cursor、Codex、Gemini CLI 等：
 
 ```bash
 npx skills add wxkingstar/SpecFusion
 ```
 
-### 方式二：手动安装
+仅安装到 Claude Code：
+
+```bash
+npx skills add wxkingstar/SpecFusion -a claude-code -y
+```
+
+### 方式二：手动安装（仅 Claude Code）
 
 **macOS / Linux：**
 
@@ -99,7 +105,13 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 
 ## 仅在当前项目安装
 
-如果不想全局安装，可以安装到项目目录（将 `~` 换成 `.`）：
+如果不想全局安装，可以安装到当前项目目录：
+
+```bash
+npx skills add wxkingstar/SpecFusion --local -y
+```
+
+或手动安装（将 `~` 换成 `.`）：
 
 **macOS / Linux：**
 ```bash
