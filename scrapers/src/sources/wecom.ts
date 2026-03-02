@@ -372,6 +372,8 @@ export class WecomSource implements DocSource {
   private jar: CookieJar;
   private client: AxiosInstance;
   private requestCount = 0;
+  private captchaLock: Promise<boolean> | null = null;
+  private captchaFailed = false;
 
   constructor() {
     this.jar = new CookieJar();
@@ -517,7 +519,7 @@ export class WecomSource implements DocSource {
     const page = await context.newPage();
 
     try {
-      await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 60000 });
+      await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
       console.log('[wecom] 等待登录/验证完成...');
 
@@ -575,6 +577,43 @@ export class WecomSource implements DocSource {
       return false;
     } finally {
       await browser.close();
+    }
+  }
+
+  // ─── Captcha handling ───────────────────────────────────────────────────
+
+  /**
+   * 处理人机验证：暂停抓取，弹出浏览器让用户完成验证，完成后继续。
+   * 使用锁机制确保并发任务只弹一次浏览器。
+   */
+  private async handleCaptcha(): Promise<boolean> {
+    // 已经确认验证失败（用户关闭浏览器未完成），后续不再弹窗
+    if (this.captchaFailed) return false;
+    // 已有验证正在进行，等待其结果
+    if (this.captchaLock) return this.captchaLock;
+
+    const doHandle = async (): Promise<boolean> => {
+      console.log('\n[wecom] ⚠️  检测到人机验证(500003)，立即暂停抓取');
+      console.log('[wecom] 正在打开浏览器，请完成人机验证后自动继续...\n');
+
+      const success = await this.openBrowserForLogin();
+      if (success) {
+        const healthy = await this.checkCookieHealth();
+        if (healthy) {
+          console.log('[wecom] ✓ 人机验证已通过，继续抓取\n');
+          return true;
+        }
+      }
+      console.error('[wecom] ✗ 人机验证未通过，后续文档将跳过\n');
+      this.captchaFailed = true;
+      return false;
+    };
+
+    this.captchaLock = doHandle();
+    try {
+      return await this.captchaLock;
+    } finally {
+      this.captchaLock = null;
     }
   }
 
@@ -666,13 +705,11 @@ export class WecomSource implements DocSource {
         await delay(waitMs);
         return this.fetchDocContent(docId, attempt + 1);
       }
-      if (message.includes('500003') && attempt < 3) {
-        const waitMs = 3000 * (attempt + 1);
-        console.warn(
-          `500003 captcha for doc ${docId}, retrying after ${waitMs}ms (attempt ${attempt + 1})`,
-        );
-        await delay(waitMs);
-        return this.fetchDocContent(docId, attempt + 1);
+      if (message.includes('500003')) {
+        const resolved = await this.handleCaptcha();
+        if (resolved && attempt < 1) {
+          return this.fetchDocContent(docId, attempt + 1);
+        }
       }
       throw error;
     }
