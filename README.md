@@ -36,20 +36,32 @@ npx skills add wxkingstar/SpecFusion
 npx skills add wxkingstar/SpecFusion -a claude-code -y
 ```
 
+也可以按平台名搜索安装：
+
+```bash
+npx skills find "feishu"      # 搜索飞书相关技能
+npx skills find "taobao"      # 搜索淘宝相关技能
+npx skills find "wecom"       # 搜索企业微信相关技能
+npx skills find "dingtalk"    # 搜索钉钉相关技能
+npx skills find "alipay"      # 搜索支付宝相关技能
+npx skills find "jd"          # 搜索京东相关技能
+# ... 支持所有已接入平台的英文名搜索
+```
+
 ### 方式二：手动安装（仅 Claude Code）
 
 **macOS / Linux：**
 
 ```bash
 curl -fsSL --create-dirs -o ~/.claude/skills/specfusion/SKILL.md \
-  https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/skills/specfusion/SKILL.md
+  https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/specfusion/SKILL.md
 ```
 
 **Windows (PowerShell)：**
 
 ```powershell
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\skills\specfusion" | Out-Null
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/skills/specfusion/SKILL.md" `
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/specfusion/SKILL.md" `
   -OutFile "$env:USERPROFILE\.claude\skills\specfusion\SKILL.md"
 ```
 
@@ -116,13 +128,13 @@ npx skills add wxkingstar/SpecFusion --local -y
 **macOS / Linux：**
 ```bash
 curl -fsSL --create-dirs -o .claude/skills/specfusion/SKILL.md \
-  https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/skills/specfusion/SKILL.md
+  https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/specfusion/SKILL.md
 ```
 
 **Windows (PowerShell)：**
 ```powershell
 New-Item -ItemType Directory -Force -Path ".claude\skills\specfusion" | Out-Null
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/skills/specfusion/SKILL.md" `
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/specfusion/SKILL.md" `
   -OutFile ".claude\skills\specfusion\SKILL.md"
 ```
 
