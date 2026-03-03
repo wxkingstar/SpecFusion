@@ -1,15 +1,11 @@
 ---
 name: specfusion
 description: |
-  Search API documentation for 15 Chinese open platforms: WeCom (企业微信), Feishu/Lark (飞书), DingTalk (钉钉), Taobao (淘宝), Xiaohongshu (小红书), Douyin E-commerce (抖音电商), WeChat Mini Program (微信小程序), WeChat Shop (微信小店), Pinduoduo (拼多多), Youzan (有赞), WeChat Pay (微信支付), Alipay (支付宝), JD (京东), SHEIN, Dewu (得物). 26,000+ API docs with Chinese full-text search.
-  搜索企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付、支付宝开放平台、京东商家开放平台、SHEIN开放平台、得物开放平台等开放平台的 API 文档。当用户询问以下内容时自动触发：
-  - 企业微信/飞书/钉钉/淘宝/小红书/抖音电商/微信小程序/微信小店/拼多多/有赞/微信支付/支付宝/京东/SHEIN/得物等平台的 API 用法、参数、接口说明
-  - 如何调用某个开放平台接口（发消息、获取用户、创建审批等）
-  - 开放平台的 webhook、回调、事件订阅配置
-  - OAuth、授权、access_token 获取流程
-  - 任何涉及第三方平台 OpenAPI 规范的开发问题
-  触发关键词：企业微信、飞书、钉钉、淘宝、小红书、抖音电商、抖店、微信小程序、小程序、微信小店、小店、拼多多、pdd、有赞、youzan、微信支付、wechat-pay、wechatpay、支付宝、alipay、京东、jd、京东开放平台、SHEIN、shein、sheincorp、得物、dewu、poizon、得物开放平台、开放平台、API文档、接口文档、
-  wecom、feishu、lark、dingtalk、taobao、xiaohongshu、xhs、douyin、jinritemai、wechat、miniprogram、wechat-shop、channels、pinduoduo、youzanyun、电商开放平台、openapi、webhook、access_token
+  企业微信 飞书 钉钉 淘宝 小红书 抖音电商 微信小程序 微信小店 拼多多 有赞 微信支付 支付宝 京东 SHEIN 得物 API文档搜索。
+  WeCom Feishu Lark DingTalk Taobao Xiaohongshu Douyin WeChat Pinduoduo Youzan Alipay JD SHEIN Dewu API docs search.
+  26,000+ API docs across 15 Chinese open platforms with full-text search. 搜索15个开放平台的API开发文档，支持中文全文检索。
+  wecom feishu lark dingtalk taobao xiaohongshu xhs douyin jinritemai wechat miniprogram wechat-shop wechat-pay pinduoduo youzanyun alipay jd shein dewu poizon openapi webhook access_token
+  抖店 小程序 小店 pdd 京东开放平台 得物开放平台 电商开放平台 接口文档 开放平台
 user-invocable: true
 argument-hint: "企业微信发送消息 / feishu 审批 / 淘宝商品发布 / 小红书订单 / 抖音电商订单 / 微信小程序登录 / 微信小店订单 / 拼多多订单 / 有赞交易 / 微信支付JSAPI下单 / 支付宝当面付 / 京东商品API / SHEIN商品发布 / 得物订单 / 搜索关键词"
 allowed-tools: Bash, Read
