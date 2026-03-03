@@ -6,7 +6,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SKILLS_DIR="$REPO_ROOT/skills"
+SKILLS_DIR="$REPO_ROOT"
 MAIN_SKILL="$SKILLS_DIR/specfusion/SKILL.md"
 
 if [ ! -f "$MAIN_SKILL" ]; then
@@ -64,7 +64,7 @@ SKILLEOF
 
   if [ -f "$skill_file" ]; then
     ((updated++))
-    echo "  ✓ $skill_name -> skills/$dir_name/"
+    echo "  ✓ $skill_name -> $dir_name/"
   fi
 done
 
