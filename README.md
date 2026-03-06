@@ -24,16 +24,18 @@
 
 ### 方式一：skills CLI（推荐）
 
-自动检测已安装的 Agent，一键安装到 Claude Code、Cursor、Codex、Gemini CLI 等：
+自动检测已安装的 Agent，一键**全局安装**到 Claude Code、Codex、Gemini CLI 等：
 
 ```bash
-npx skills add wxkingstar/SpecFusion
+npx skills add wxkingstar/SpecFusion -g -y
 ```
+
+> **⚠️ 必须加 `-g` 参数！** 不加 `-g` 会安装到当前目录，只在该目录下生效。加 `-g` 安装到 `~/.claude/skills/`，所有项目都能用。
 
 仅安装到 Claude Code：
 
 ```bash
-npx skills add wxkingstar/SpecFusion -a claude-code -y
+npx skills add wxkingstar/SpecFusion -g -a claude-code -y
 ```
 
 也可以按平台名搜索安装：
@@ -48,16 +50,16 @@ npx skills find "jd"          # 搜索京东相关技能
 # ... 支持所有已接入平台的英文名搜索
 ```
 
-### 方式二：手动安装（仅 Claude Code）
+### 方式二：手动安装
 
-**macOS / Linux：**
+**Claude Code（macOS / Linux）：**
 
 ```bash
 curl -fsSL --create-dirs -o ~/.claude/skills/specfusion/SKILL.md \
   https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/specfusion/SKILL.md
 ```
 
-**Windows (PowerShell)：**
+**Claude Code（Windows PowerShell）：**
 
 ```powershell
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\skills\specfusion" | Out-Null
@@ -65,7 +67,30 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
   -OutFile "$env:USERPROFILE\.claude\skills\specfusion\SKILL.md"
 ```
 
-安装完成。打开 Claude Code，开始提问即可。
+**Cursor（macOS / Linux）：**
+
+```bash
+curl -fsSL --create-dirs -o ~/.cursor/rules/specfusion.mdc \
+  https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/specfusion/SKILL.md
+```
+
+**Cursor（Windows PowerShell）：**
+
+```powershell
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.cursor\rules" | Out-Null
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/specfusion/SKILL.md" `
+  -OutFile "$env:USERPROFILE\.cursor\rules\specfusion.mdc"
+```
+
+安装完成。打开 Claude Code 或 Cursor，开始提问即可。
+
+### 安装后找不到 Skill？
+
+| 问题 | 原因 | 解决方案 |
+|------|------|---------|
+| Claude Code 找不到 | 安装时没加 `-g`，只装到了当前目录 | 重新运行 `npx skills add wxkingstar/SpecFusion -g -y` |
+| Cursor 找不到 | skills CLI 目前不会为 Cursor 创建规则文件 | 用上面的手动安装命令 |
+| 验证是否安装成功 | — | Claude Code: `ls ~/.claude/skills/specfusion/SKILL.md`<br>Cursor: `ls ~/.cursor/rules/specfusion.mdc` |
 
 ## 使用方式
 
@@ -117,25 +142,32 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 
 ## 仅在当前项目安装
 
-如果不想全局安装，可以安装到当前项目目录：
+如果只想在某个项目中使用，可以安装到项目目录（不加 `-g`）：
 
 ```bash
-npx skills add wxkingstar/SpecFusion --local -y
+# 在项目根目录下运行
+npx skills add wxkingstar/SpecFusion -y
 ```
 
 或手动安装（将 `~` 换成 `.`）：
 
-**macOS / Linux：**
+**Claude Code（macOS / Linux）：**
 ```bash
 curl -fsSL --create-dirs -o .claude/skills/specfusion/SKILL.md \
   https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/specfusion/SKILL.md
 ```
 
-**Windows (PowerShell)：**
+**Claude Code（Windows PowerShell）：**
 ```powershell
 New-Item -ItemType Directory -Force -Path ".claude\skills\specfusion" | Out-Null
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/specfusion/SKILL.md" `
   -OutFile ".claude\skills\specfusion\SKILL.md"
+```
+
+**Cursor：**
+```bash
+curl -fsSL --create-dirs -o .cursor/rules/specfusion.mdc \
+  https://raw.githubusercontent.com/wxkingstar/SpecFusion/main/specfusion/SKILL.md
 ```
 
 ---
