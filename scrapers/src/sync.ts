@@ -27,7 +27,7 @@ const BATCH_SIZE = 20;
 
 /** 不同源的并发控制 — 企业微信限速严格，钉钉使用 Playwright 串行导航 */
 const SOURCE_CONCURRENCY: Record<string, number> = {
-  wecom: 2,
+  wecom: 1,
   feishu: 6,
   dingtalk: 1,
   xiaohongshu: 1,

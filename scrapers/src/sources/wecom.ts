@@ -500,6 +500,7 @@ export class WecomSource implements DocSource {
     try {
       browser = await chromium.launch({
         headless: false,
+        channel: 'chrome', // 使用系统 Chrome，避免 Playwright Chromium 被检测为机器人
         args: ['--start-maximized'],
       });
     } catch (err: any) {
@@ -620,9 +621,9 @@ export class WecomSource implements DocSource {
   // ─── Adaptive rate limiting ─────────────────────────────────────────────
 
   private getDelayMs(): number {
-    if (this.requestCount < 100) return 1200;
-    if (this.requestCount < 200) return 1800;
-    return 2500;
+    if (this.requestCount < 100) return 2000;
+    if (this.requestCount < 200) return 2500;
+    return 3000;
   }
 
   private async throttle(): Promise<void> {
@@ -698,7 +699,7 @@ export class WecomSource implements DocSource {
       const message = error?.message || '';
       // Retry on 429 rate limit or 500003 captcha
       if ((status === 429 || message.includes('429')) && attempt < 5) {
-        const waitMs = 1500 * (attempt + 1);
+        const waitMs = 5000 * (attempt + 1);
         console.warn(
           `429 rate limit for doc ${docId}, retrying after ${waitMs}ms (attempt ${attempt + 1})`,
         );
