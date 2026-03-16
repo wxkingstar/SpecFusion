@@ -1,5 +1,7 @@
 # SpecFusion
 
+🌐 **官网：[specfusion.kingstar.xin](https://specfusion.kingstar.xin/)**
+
 **在 Claude Code 里直接搜企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付、支付宝开放平台、京东商家开放平台、SHEIN开放平台、得物开放平台的 API 文档。**
 
 不用切浏览器，不用翻文档站——输入问题，拿到接口参数，继续写代码。
