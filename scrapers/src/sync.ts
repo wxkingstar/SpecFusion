@@ -190,6 +190,15 @@ export async function syncSource(
   // 始终 slice 以释放原始大数组引用
   entries = entries.slice(offset);
 
+  if (options.filter) {
+    const keyword = options.filter.toLowerCase();
+    const before = entries.length;
+    entries = entries.filter(
+      (e) => e.path.toLowerCase().includes(keyword) || e.title.toLowerCase().includes(keyword),
+    );
+    console.log(`[sync] 过滤 "${options.filter}": ${before} → ${entries.length} 篇`);
+  }
+
   if (limit && limit > 0) {
     entries = entries.slice(0, limit);
     console.log(`[sync] 限制处理数量: ${limit}`);

@@ -56,6 +56,8 @@ export interface SyncOptions {
   offset?: number;
   /** 跳过已存在的文档（仅抓取缺失文档） */
   skipExisting?: boolean;
+  /** 按路径/标题关键词过滤目录条目 */
+  filter?: string;
   /** API 服务地址 */
   apiUrl?: string;
   /** Admin Token */

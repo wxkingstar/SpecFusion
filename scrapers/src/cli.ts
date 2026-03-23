@@ -20,6 +20,7 @@ program
   .option('-l, --limit <number>', '限制处理文档数量（调试用）', parseInt)
   .option('--offset <number>', '跳过前 N 篇文档（分批处理用）', parseInt)
   .option('--skip-existing', '跳过已存在的文档（仅抓取缺失文档）')
+  .option('-f, --filter <keyword>', '按路径/标题关键词过滤文档')
   .option('--api-url <url>', 'API 服务地址', process.env.SPECFUSION_API_URL || 'http://localhost:3456/api')
   .option('--admin-token <token>', 'Admin Token', process.env.ADMIN_TOKEN || 'dev-token')
   .action(async (source: string | undefined, opts: {
@@ -28,6 +29,7 @@ program
     limit?: number;
     offset?: number;
     skipExisting?: boolean;
+    filter?: string;
     apiUrl?: string;
     adminToken?: string;
   }) => {
@@ -36,6 +38,7 @@ program
       limit: opts.limit,
       offset: opts.offset,
       skipExisting: opts.skipExisting,
+      filter: opts.filter,
       apiUrl: opts.apiUrl,
       adminToken: opts.adminToken,
     };
