@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "specfusion": {
+      "source": "wxkingstar/SpecFusion",
+      "sourceType": "github",
+      "computedHash": "cc645b021720bb3133dd13c5ce4ef5f05b4d62315dea03433c5869dfdf0358ed"
+    }
+  }
+}
