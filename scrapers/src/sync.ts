@@ -145,6 +145,48 @@ async function flushBatch(
   }
 }
 
+// ── Diff（目录对比） ──────────────────────────────────────────────────────
+
+export interface DiffResult {
+  source: string;
+  remotePaths: string[];
+  localPaths: string[];
+  added: string[];
+  removed: string[];
+}
+
+export async function diffSource(
+  sourceId: string,
+  options: { apiUrl?: string; adminToken?: string } = {},
+): Promise<DiffResult> {
+  const apiUrl = options.apiUrl || process.env.SPECFUSION_API_URL || DEFAULT_API_URL;
+  const adminToken = options.adminToken || process.env.ADMIN_TOKEN || DEFAULT_ADMIN_TOKEN;
+
+  const source = createSource(sourceId);
+  const client = createApiClient(apiUrl, adminToken);
+
+  console.log(`[diff] 拉取 ${source.name} 远程目录...`);
+  const entries = await source.fetchCatalog();
+  const remotePaths = entries.map((e) => e.path);
+
+  console.log(`[diff] 拉取本地已有文档列表...`);
+  let localPaths: string[] = [];
+  try {
+    const resp = await client.get(`/admin/source-paths/${sourceId}`);
+    localPaths = resp.data as string[];
+  } catch {
+    console.warn('[diff] 无法获取本地文档列表（API 服务未运行？）');
+  }
+
+  const remoteSet = new Set(remotePaths);
+  const localSet = new Set(localPaths);
+
+  const added = remotePaths.filter((p) => !localSet.has(p));
+  const removed = localPaths.filter((p) => !remoteSet.has(p));
+
+  return { source: sourceId, remotePaths, localPaths, added, removed };
+}
+
 // ── 核心同步函数 ──────────────────────────────────────────────────────────
 
 export async function syncSource(

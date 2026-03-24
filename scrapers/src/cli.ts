@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { syncSource, syncAll, listRegisteredSources, registerOpenAPISource } from './sync.js';
+import { syncSource, syncAll, diffSource, listRegisteredSources, registerOpenAPISource } from './sync.js';
 import type { SyncOptions } from './types.js';
 
 const program = new Command();
@@ -55,6 +55,39 @@ program
     } catch (error) {
       console.error('同步失败:', (error as Error).message);
       process.exitCode = 1;
+    }
+  });
+
+// ── diff 命令 ─────────────────────────────────────────────────────────────
+
+program
+  .command('diff <source>')
+  .description('对比远程目录与本地数据库，快速发现新增/删除文档')
+  .option('--api-url <url>', 'API 服务地址', process.env.SPECFUSION_API_URL || 'http://localhost:3456/api')
+  .option('--admin-token <token>', 'Admin Token', process.env.ADMIN_TOKEN || 'dev-token')
+  .action(async (source: string, opts: { apiUrl?: string; adminToken?: string }) => {
+    try {
+      const result = await diffSource(source, opts);
+      console.log('');
+      console.log(`[diff] ${source}: 远程 ${result.remotePaths.length} 篇, 本地 ${result.localPaths.length} 篇`);
+
+      if (result.added.length === 0 && result.removed.length === 0) {
+        console.log('[diff] 目录结构无变化');
+      } else {
+        if (result.added.length > 0) {
+          console.log(`\n  新增 ${result.added.length} 篇:`);
+          for (const p of result.added) console.log(`    + ${p}`);
+        }
+        if (result.removed.length > 0) {
+          console.log(`\n  删除 ${result.removed.length} 篇:`);
+          for (const p of result.removed) console.log(`    - ${p}`);
+        }
+      }
+
+      process.exitCode = (result.added.length > 0 || result.removed.length > 0) ? 1 : 0;
+    } catch (error) {
+      console.error('Diff 失败:', (error as Error).message);
+      process.exitCode = 2;
     }
   });
 
