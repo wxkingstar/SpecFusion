@@ -17,6 +17,9 @@ const SOURCE_NAME_MAP: Record<string, string> = {
   jd: '京东商家开放平台',
   shein: 'SHEIN开放平台',
   dewu: '得物开放平台',
+  'volcengine-ecs': '火山引擎云服务器',
+  volcengine: '火山引擎',
+  bailian: '阿里云百炼',
 };
 
 function sourceName(sourceId: string): string {

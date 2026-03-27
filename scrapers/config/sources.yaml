@@ -78,3 +78,24 @@ sources:
     schedule: "0 12 * * 0"
     options:
       concurrency: 1  # Playwright 串行
+
+  - id: volcengine-ecs
+    name: 火山引擎云服务器
+    adapter: volcengine
+    schedule: "0 13 * * 0"
+    options:
+      concurrency: 3
+
+  - id: volcengine
+    name: 火山引擎
+    adapter: volcengine-docs
+    schedule: "0 14 * * 0"
+    options:
+      concurrency: 3
+
+  - id: bailian
+    name: 阿里云百炼
+    adapter: bailian
+    schedule: "0 15 * * 0"
+    options:
+      concurrency: 3

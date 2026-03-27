@@ -17,6 +17,9 @@ import { JdSource } from './sources/jd.js';
 import { SheinSource } from './sources/shein.js';
 import { DewuSource } from './sources/dewu.js';
 import { OpenAPISource } from './sources/openapi.js';
+import { VolcengineEcsSource } from './sources/volcengine.js';
+import { VolcengineDocsSource } from './sources/volcengine-docs.js';
+import { BailianSource } from './sources/bailian.js';
 
 // ── 默认值 ──────────────────────────────────────────────────────────────
 
@@ -42,6 +45,9 @@ const SOURCE_CONCURRENCY: Record<string, number> = {
   jd: 1,  // Playwright 串行导航
   shein: 3,
   dewu: 1, // Playwright 串行导航
+  'volcengine-ecs': 3,
+  volcengine: 3,  // SSR 页面抓取，页面较大
+  bailian: 1,  // 阿里云帮助中心有 x5sec 反爬，需要串行
 };
 
 // ── Source 注册表 ────────────────────────────────────────────────────────
@@ -66,6 +72,9 @@ const SOURCE_REGISTRY: Record<string, SourceFactory> = {
   jd: { create: () => new JdSource() },
   shein: { create: () => new SheinSource() },
   dewu: { create: () => new DewuSource() },
+  'volcengine-ecs': { create: () => new VolcengineEcsSource() },
+  volcengine: { create: () => new VolcengineDocsSource() },
+  bailian: { create: () => new BailianSource() },
 };
 
 export function registerOpenAPISource(

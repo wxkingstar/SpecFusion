@@ -2,7 +2,7 @@
 
 🌐 **官网：[specfusion.kingstar.xin](https://specfusion.kingstar.xin/)**
 
-**在 Claude Code 里直接搜企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付、支付宝开放平台、京东商家开放平台、SHEIN开放平台、得物开放平台的 API 文档。**
+**在 Claude Code 里直接搜企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付、支付宝开放平台、京东商家开放平台、SHEIN开放平台、得物开放平台、火山引擎、阿里云百炼的 API 文档。**
 
 不用切浏览器，不用翻文档站——输入问题，拿到接口参数，继续写代码。
 
@@ -19,7 +19,7 @@
 
 - **不离开终端** — 写代码时直接问，Claude 帮你查文档、给出接口参数和示例
 - **中文搜索准确** — jieba 分词 + FTS5 全文索引，`发送应用消息`、`access_token`、`40001` 都能搜到
-- **26,840+ 篇文档** — 企业微信 ~2,680 篇 + 飞书 ~4,070 篇 + 钉钉 ~2,020 篇 + 淘宝 ~6,740 篇 + 小红书 ~100 篇 + 抖音电商 ~1,280 篇 + 微信小程序 ~280 篇 + 微信小店 ~480 篇 + 拼多多 ~280 篇 + 有赞 ~1,240 篇 + 微信支付 ~540 篇 + 支付宝 ~600 篇 + 京东 ~6,100 篇 + SHEIN ~190 篇 + 得物 ~260 篇，接口参数、错误码、事件订阅全覆盖
+- **56,700+ 篇文档** — 企业微信 ~2,690 篇 + 飞书 ~4,070 篇 + 钉钉 ~2,020 篇 + 淘宝 ~6,740 篇 + 小红书 ~100 篇 + 抖音电商 ~1,280 篇 + 微信小程序 ~280 篇 + 微信小店 ~480 篇 + 拼多多 ~280 篇 + 有赞 ~1,240 篇 + 微信支付 ~540 篇 + 支付宝 ~600 篇 + 京东 ~6,100 篇 + SHEIN ~190 篇 + 得物 ~260 篇 + 火山引擎ECS ~136 篇 + 火山引擎 ~28,660 篇 + 阿里云百炼 ~1,110 篇，接口参数、错误码、事件订阅全覆盖
 - **零配置** — 云端服务已部署好，安装 Skill 后即可使用，无需自建后端
 
 ## 安装
@@ -96,7 +96,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 
 ## 使用方式
 
-**方式一：直接提问**（提到企业微信、飞书、钉钉、淘宝、小红书、抖音电商、微信小程序、微信小店、拼多多、有赞、微信支付、支付宝、京东、SHEIN、得物等关键词时自动触发）
+**方式一：直接提问**（提到企业微信、飞书、钉钉、淘宝、小红书、抖音电商、微信小程序、微信小店、拼多多、有赞、微信支付、支付宝、京东、SHEIN、得物、火山引擎、百炼等关键词时自动触发）
 
 ```
 > 飞书如何创建审批实例？
@@ -113,6 +113,8 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 > 支付宝当面付接口怎么用？
 > SHEIN商品发布接口怎么调？
 > 得物开放平台怎么查询订单？
+> 火山引擎ECS怎么创建实例？
+> 百炼千问API怎么调用？
 ```
 
 **方式二：使用 `/specfusion` 命令**
@@ -141,6 +143,9 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 | 京东商家开放平台 | ~6,100 | 商品、订单、物流、售后、促销、店铺、数据、发票、供应商等 API |
 | SHEIN开放平台 | ~190 | 密钥授权、商品、订单、退货退款、采购单、库存、财务、物流、Webhook 等 API |
 | 得物开放平台 | ~260 | 商品、订单、售后、出价、入仓、开票、文件、对账单等 API |
+| 火山引擎云服务器 | ~136 | 实例、镜像、密钥对、安全组、地域、部署集、专有宿主机、云助手等 API |
+| 火山引擎 | ~28,660 | 184 个云产品文档：计算、AI、网络、存储、数据库、容器、安全、CDN、视频云、大数据等 |
+| 阿里云百炼 | ~1,110 | 千问大模型、DashScope SDK、OpenAI兼容接口、语音合成/识别、图像/视频生成、应用开发等 |
 
 ## 仅在当前项目安装
 
@@ -230,6 +235,9 @@ npm run sync -- --source alipay      # 同步支付宝开放平台文档
 npm run sync -- --source jd          # 同步京东商家开放平台文档
 npm run sync -- --source shein       # 同步SHEIN开放平台文档
 npm run sync -- --source dewu        # 同步得物开放平台文档（需要 playwright）
+npm run sync -- --source volcengine-ecs  # 同步火山引擎云服务器文档
+npm run sync -- --source volcengine  # 同步火山引擎文档中心
+npm run sync -- --source bailian     # 同步阿里云百炼文档
 ```
 
 同步完成后数据库文件位于 `data/specfusion.db`。
@@ -263,7 +271,7 @@ Base URL: `http://localhost:3456/api`（自部署）
 | 参数 | 必填 | 说明 |
 |------|------|------|
 | `q` | 是 | 搜索关键词（接口名、API 路径、错误码、功能概念） |
-| `source` | 否 | 文档来源：`wecom` / `feishu` / `dingtalk` / `taobao` / `xiaohongshu` / `douyin` / `wechat-miniprogram` / `wechat-shop` / `pinduoduo` / `youzan` / `wechat-pay` / `alipay` / `jd` / `shein` / `dewu` |
+| `source` | 否 | 文档来源：`wecom` / `feishu` / `dingtalk` / `taobao` / `xiaohongshu` / `douyin` / `wechat-miniprogram` / `wechat-shop` / `pinduoduo` / `youzan` / `wechat-pay` / `alipay` / `jd` / `shein` / `dewu` / `volcengine-ecs` / `volcengine` / `bailian` |
 | `mode` | 否 | 开发模式（仅企业微信）：`internal` / `third_party` / `service_provider` |
 | `limit` | 否 | 返回数量，默认 5，最大 20 |
 

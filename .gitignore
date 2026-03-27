@@ -14,3 +14,4 @@ coverage/
 *.log
 api/data/
 /specfusion-promo.mp4
+.gstack/
