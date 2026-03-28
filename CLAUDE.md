@@ -33,6 +33,10 @@ npm run build
 
 支持 Docker 和 Kubernetes 部署，详见 README.md 中的自部署指南。
 
+## 官网
+
+官网代码目录：`/Users/wangxin/work/node/specfusion-web`，部署在 Vercel 上。
+
 ## 技术栈
 
 - API：Node.js + Fastify + better-sqlite3 + FTS5
