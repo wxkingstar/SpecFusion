@@ -3,7 +3,7 @@ name: specfusion
 description: |
   企业微信 飞书 钉钉 淘宝 小红书 抖音电商 微信小程序 微信小店 拼多多 有赞 微信支付 支付宝 京东 SHEIN 得物 火山引擎 阿里云百炼 API文档搜索。
   WeCom Feishu Lark DingTalk Taobao Xiaohongshu Douyin WeChat Pinduoduo Youzan Alipay JD SHEIN Dewu Volcengine Bailian API docs search.
-  56,000+ API docs across 18 Chinese open platforms with full-text search. 搜索18个开放平台的API开发文档，支持中文全文检索。
+  59,200+ API docs across 18 Chinese open platforms with full-text search. 搜索18个开放平台的API开发文档，支持中文全文检索。
   wecom feishu lark dingtalk taobao xiaohongshu xhs douyin jinritemai wechat miniprogram wechat-shop wechat-pay pinduoduo youzanyun alipay jd shein dewu poizon volcengine ecs bailian dashscope qwen doubao openapi webhook access_token
   抖店 小程序 小店 pdd 京东开放平台 得物开放平台 火山引擎云服务器 火山引擎文档中心 电商开放平台 接口文档 开放平台 火山方舟 对象存储 容器服务 豆包 豆包大模型 百炼 千问 通义千问 通义 大模型 DashScope
 user-invocable: true
