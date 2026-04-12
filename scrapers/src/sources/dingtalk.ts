@@ -182,10 +182,17 @@ export class DingtalkSource implements DocSource {
       throw new Error(`[dingtalk] 文档缺少 sourceUrl: ${entry.title}`);
     }
 
-    await page.goto(url, {
-      waitUntil: 'domcontentloaded',
-      timeout: PAGE_TIMEOUT,
-    });
+    try {
+      await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: PAGE_TIMEOUT,
+      });
+    } catch (err) {
+      // 导航错误（如 ERR_TOO_MANY_REDIRECTS）会把 page 留在 chrome-error://chromewebdata/，
+      // 下一次 goto 会被这个残留导航打断。重置到 about:blank 让后续请求有干净起点。
+      await page.goto('about:blank').catch(() => {});
+      throw err;
+    }
 
     await this.dismissDialogs(page);
 

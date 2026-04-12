@@ -494,30 +494,68 @@ export class WecomSource implements DocSource {
       return false;
     }
 
-    console.log('[wecom] 请在浏览器中完成登录/验证，完成后页面会自动关闭。\n');
+    console.log('[wecom] 请在浏览器中完成登录/验证，脚本会自动检测并继续。\n');
 
-    let browser;
-    try {
-      browser = await chromium.launch({
-        headless: false,
-        channel: 'chrome', // 使用系统 Chrome，避免 Playwright Chromium 被检测为机器人
-        args: ['--start-maximized'],
-      });
-    } catch (err: any) {
-      console.warn(
-        `[wecom] 启动浏览器失败: ${err.message}\n` +
-          '  可能原因：Playwright 浏览器未安装（运行 npx playwright install chromium）\n' +
-          '  请手动更新 Cookie（见上方说明）',
-      );
-      return false;
+    // 通过 CDP 连接独立 Chrome（而不是 Playwright launchPersistentContext），
+    // 这样 chrome-devtools MCP 可以同时接入同一个浏览器协助用户完成人机验证。
+    const CDP_URL = process.env.WECOM_CDP_URL || 'http://localhost:9222';
+    const userDataDir = path.resolve('.wecom_browser_profile');
+
+    const tryConnect = async () => {
+      try {
+        return await chromium.connectOverCDP(CDP_URL);
+      } catch {
+        return null;
+      }
+    };
+
+    let browser = await tryConnect();
+    if (!browser) {
+      console.log(`[wecom] ${CDP_URL} 未找到已运行的 Chrome，尝试启动一个独立实例...`);
+      try {
+        const { spawn } = await import('child_process');
+        const chromePath =
+          process.env.WECOM_CHROME_PATH ||
+          '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+        const port = new URL(CDP_URL).port || '9222';
+        const child = spawn(
+          chromePath,
+          [
+            `--remote-debugging-port=${port}`,
+            `--user-data-dir=${userDataDir}`,
+            '--no-first-run',
+            '--no-default-browser-check',
+            '--disable-blink-features=AutomationControlled',
+            '--start-maximized',
+            'about:blank',
+          ],
+          { detached: true, stdio: 'ignore' },
+        );
+        child.unref();
+      } catch (err: any) {
+        console.warn(
+          `[wecom] 启动 Chrome 失败: ${err.message}\n` +
+            '  设置 WECOM_CHROME_PATH 指向系统 Chrome 可执行路径，或先手动启动：\n' +
+            `  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9222 --user-data-dir=${userDataDir}`,
+        );
+        return false;
+      }
+
+      // 等 CDP 端口就绪（最多 15s）
+      for (let i = 0; i < 30; i++) {
+        await new Promise((r) => setTimeout(r, 500));
+        browser = await tryConnect();
+        if (browser) break;
+      }
+      if (!browser) {
+        console.warn('[wecom] Chrome 已启动但 CDP 端口仍无法连接，放弃');
+        return false;
+      }
     }
 
-    const context = await browser.newContext({
-      viewport: null,
-      userAgent: USER_AGENT,
-    });
-
-    const page = await context.newPage();
+    const context =
+      browser.contexts()[0] || (await (browser as any).newContext({ userAgent: USER_AGENT }));
+    const page = context.pages()[0] || (await context.newPage());
 
     try {
       await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -577,7 +615,12 @@ export class WecomSource implements DocSource {
       }
       return false;
     } finally {
-      await browser.close();
+      // 只断开 CDP 连接，不关闭 Chrome 进程 —— 让 chrome-devtools MCP 可以继续使用同一个浏览器
+      try {
+        await (browser as any).close();
+      } catch {
+        /* 忽略断开错误 */
+      }
     }
   }
 
