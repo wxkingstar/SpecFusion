@@ -20,6 +20,7 @@ const SOURCE_NAME_MAP: Record<string, string> = {
   'volcengine-ecs': '火山引擎云服务器',
   volcengine: '火山引擎',
   bailian: '阿里云百炼',
+  weaver: '泛微 e-teams 开放平台',
 };
 
 function sourceName(sourceId: string): string {

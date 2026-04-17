@@ -20,6 +20,7 @@ import { OpenAPISource } from './sources/openapi.js';
 import { VolcengineEcsSource } from './sources/volcengine.js';
 import { VolcengineDocsSource } from './sources/volcengine-docs.js';
 import { BailianSource } from './sources/bailian.js';
+import { WeaverSource } from './sources/weaver.js';
 
 // ── 默认值 ──────────────────────────────────────────────────────────────
 
@@ -48,6 +49,7 @@ const SOURCE_CONCURRENCY: Record<string, number> = {
   'volcengine-ecs': 3,
   volcengine: 3,  // SSR 页面抓取，页面较大
   bailian: 1,  // 阿里云帮助中心有 x5sec 反爬，需要串行
+  weaver: 6,  // 静态 CDN JSON，可以高并发
 };
 
 // ── Source 注册表 ────────────────────────────────────────────────────────
@@ -75,6 +77,7 @@ const SOURCE_REGISTRY: Record<string, SourceFactory> = {
   'volcengine-ecs': { create: () => new VolcengineEcsSource() },
   volcengine: { create: () => new VolcengineDocsSource() },
   bailian: { create: () => new BailianSource() },
+  weaver: { create: () => new WeaverSource() },
 };
 
 export function registerOpenAPISource(

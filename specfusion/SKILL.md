@@ -1,20 +1,20 @@
 ---
 name: specfusion
 description: |
-  企业微信 飞书 钉钉 淘宝 小红书 抖音电商 微信小程序 微信小店 拼多多 有赞 微信支付 支付宝 京东 SHEIN 得物 火山引擎 阿里云百炼 API文档搜索。
-  WeCom Feishu Lark DingTalk Taobao Xiaohongshu Douyin WeChat Pinduoduo Youzan Alipay JD SHEIN Dewu Volcengine Bailian API docs search.
-  59,200+ API docs across 18 Chinese open platforms with full-text search. 搜索18个开放平台的API开发文档，支持中文全文检索。
-  wecom feishu lark dingtalk taobao xiaohongshu xhs douyin jinritemai wechat miniprogram wechat-shop wechat-pay pinduoduo youzanyun alipay jd shein dewu poizon volcengine ecs bailian dashscope qwen doubao openapi webhook access_token
-  抖店 小程序 小店 pdd 京东开放平台 得物开放平台 火山引擎云服务器 火山引擎文档中心 电商开放平台 接口文档 开放平台 火山方舟 对象存储 容器服务 豆包 豆包大模型 百炼 千问 通义千问 通义 大模型 DashScope
+  企业微信 飞书 钉钉 淘宝 小红书 抖音电商 微信小程序 微信小店 拼多多 有赞 微信支付 支付宝 京东 SHEIN 得物 火山引擎 阿里云百炼 泛微 API文档搜索。
+  WeCom Feishu Lark DingTalk Taobao Xiaohongshu Douyin WeChat Pinduoduo Youzan Alipay JD SHEIN Dewu Volcengine Bailian Weaver eTeams API docs search.
+  59,700+ API docs across 19 Chinese open platforms with full-text search. 搜索19个开放平台的API开发文档，支持中文全文检索。
+  wecom feishu lark dingtalk taobao xiaohongshu xhs douyin jinritemai wechat miniprogram wechat-shop wechat-pay pinduoduo youzanyun alipay jd shein dewu poizon volcengine ecs bailian dashscope qwen doubao weaver eteams e-teams ecology openapi webhook access_token
+  抖店 小程序 小店 pdd 京东开放平台 得物开放平台 火山引擎云服务器 火山引擎文档中心 电商开放平台 接口文档 开放平台 火山方舟 对象存储 容器服务 豆包 豆包大模型 百炼 千问 通义千问 通义 大模型 DashScope 泛微 泛微OA ecology e-cology e-teams eteams
 user-invocable: true
-argument-hint: "企业微信发送消息 / feishu 审批 / 淘宝商品发布 / 小红书订单 / 抖音电商订单 / 微信小程序登录 / 微信小店订单 / 拼多多订单 / 有赞交易 / 微信支付JSAPI下单 / 支付宝当面付 / 京东商品API / SHEIN商品发布 / 得物订单 / 火山引擎ECS创建实例 / 百炼千问API / 搜索关键词"
+argument-hint: "企业微信发送消息 / feishu 审批 / 淘宝商品发布 / 小红书订单 / 抖音电商订单 / 微信小程序登录 / 微信小店订单 / 拼多多订单 / 有赞交易 / 微信支付JSAPI下单 / 支付宝当面付 / 京东商品API / SHEIN商品发布 / 得物订单 / 火山引擎ECS创建实例 / 百炼千问API / 泛微免登获取accessToken / 搜索关键词"
 allowed-tools: Bash, Read
 compatibility: Requires network access to specfusion.inagora.org (first-party API service maintained by the skill author)
 ---
 
 # SpecFusion — 多源 API 文档搜索
 
-你可以通过云端 API 搜索企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付、支付宝开放平台、京东商家开放平台、SHEIN开放平台、得物开放平台、火山引擎云服务器、火山引擎文档中心、阿里云百炼等平台的开发文档。
+你可以通过云端 API 搜索企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付、支付宝开放平台、京东商家开放平台、SHEIN开放平台、得物开放平台、火山引擎云服务器、火山引擎文档中心、阿里云百炼、泛微 e-teams 开放平台等平台的开发文档。
 
 ## 安全说明
 
@@ -43,7 +43,7 @@ curl -s -G "http://specfusion.inagora.org/api/search" \
   - API 路径搜索：`/cgi-bin/message/send`、`/open-apis/contact/v3/users`
   - 错误码搜索：`60011`、`40001`、`errcode 40001`
   - 功能概念搜索：`客户联系`、`会话存档`、`消息卡片`
-- `source`（可选）：文档来源过滤，可选值为 wecom / feishu / dingtalk / taobao / xiaohongshu / douyin / wechat-miniprogram / wechat-shop / pinduoduo / youzan / wechat-pay / alipay / jd / shein / dewu / volcengine-ecs / volcengine / bailian，不填搜索全部
+- `source`（可选）：文档来源过滤，可选值为 wecom / feishu / dingtalk / taobao / xiaohongshu / douyin / wechat-miniprogram / wechat-shop / pinduoduo / youzan / wechat-pay / alipay / jd / shein / dewu / volcengine-ecs / volcengine / bailian / weaver，不填搜索全部
 - `mode`（可选，仅企业微信）：开发模式过滤，可选值为 internal（自建应用）/ third_party（第三方应用）/ service_provider（服务商代开发）
 - `limit`（可选）：返回数量，默认 5，最大 20
 
@@ -184,6 +184,7 @@ curl -s -G "http://specfusion.inagora.org/api/recent" \
    - 火山引擎云服务器：https://api.volcengine.com/api-docs/view/overview?serviceCode=ecs&version=2020-04-01
    - 火山引擎文档中心：https://www.volcengine.com/docs
    - 阿里云百炼：https://help.aliyun.com/zh/model-studio/
+   - 泛微 e-teams 开放平台：https://weapp.eteams.cn/sp/opendoc/freepass/
 
 ## 定位说明
 
@@ -213,3 +214,4 @@ curl -s -G "http://specfusion.inagora.org/api/recent" \
 | 火山引擎云服务器 | volcengine-ecs | ~136 | 实例、镜像、密钥对、安全组、地域、部署集、专有宿主机、云助手、补丁管理等 API |
 | 火山引擎文档中心 | volcengine | ~28,660 | 184 个云产品文档：计算、AI、网络、存储、数据库、容器、安全、CDN、视频云、大数据等 |
 | 阿里云百炼 | bailian | ~1,110 | 千问大模型、DashScope SDK、OpenAI兼容接口、语音合成/识别、图像/视频生成、应用开发等 |
+| 泛微 e-teams 开放平台 | weaver | ~500 | 认证免登、组织架构、人员、工作流程、业务表单、任务、考勤、CRM、订单、文档、日程等 API |

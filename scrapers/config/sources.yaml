@@ -99,3 +99,10 @@ sources:
     schedule: "0 15 * * 0"
     options:
       concurrency: 3
+
+  - id: weaver
+    name: 泛微 e-teams 开放平台
+    adapter: weaver
+    schedule: "0 16 * * 0"
+    options:
+      concurrency: 6
