@@ -106,3 +106,10 @@ sources:
     schedule: "0 16 * * 0"
     options:
       concurrency: 6
+
+  - id: beisen
+    name: 北森 iTalent 开放平台
+    adapter: beisen
+    schedule: "0 17 * * 0"
+    options:
+      concurrency: 3

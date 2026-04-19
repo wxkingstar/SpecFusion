@@ -26,6 +26,7 @@ const SOURCE_NAME_MAP: Record<string, string> = {
   volcengine: '火山引擎',
   bailian: '阿里云百炼',
   weaver: '泛微 e-teams 开放平台',
+  beisen: '北森 iTalent 开放平台',
 };
 
 function sourceName(sourceId: string): string {
