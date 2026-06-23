@@ -55,6 +55,21 @@ interface CurDoc {
   UpdatedTime?: string;
 }
 
+/**
+ * getDocList JSON 接口返回的节点（新文档中心「智能文档中心」迁移产品使用）。
+ * Result 按 SecondNav ID 分组，每组是一个扁平节点数组，节点间通过 ParentID 关联。
+ */
+interface ApiDocNode {
+  DocumentID: number;
+  Title: string;
+  ParentID: number;
+  LibraryID: number;
+  Type: number; // 0 = document, 1 = folder
+  Status: number; // 2 = published
+  ContentType?: string;
+  SecondNav?: { ID: number; Name: string } | null;
+}
+
 // ─── Utility helpers ────────────────────────────────────────────────────────
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -125,6 +140,8 @@ export class VolcengineDocsSource implements DocSource {
 
   private client: AxiosInstance;
   private requestCount = 0;
+  /** 已迁移到新文档中心、需走 JSON API 的产品 libId（fetchCatalog 中填充，fetchContent 复用） */
+  private apiLibs = new Set<number>();
 
   constructor() {
     this.client = axios.create({
@@ -178,6 +195,96 @@ export class VolcengineDocsSource implements DocSource {
     }
 
     return pageData.nodeMap as Record<string, TreeNode>;
+  }
+
+  // ─── 新文档中心 JSON 接口（迁移产品，绕 WAF，无需鉴权） ──────────────────
+
+  /**
+   * 通过 getDocList 接口获取迁移产品的目录树。
+   * 返回按 SecondNav ID 分组的节点数组（Result）。
+   */
+  private async fetchDocListViaApi(libId: number): Promise<Record<string, ApiDocNode[]>> {
+    await this.throttle(CATALOG_DELAY);
+    const resp = await this.client.get('/api/doc/getDocList', {
+      params: { LibraryID: libId, DataSchema: 'all_second_nav', type: 'online' },
+      headers: { Accept: 'application/json' },
+    });
+    const result = (resp.data as { Result?: unknown })?.Result;
+    if (!result || typeof result !== 'object') {
+      throw new Error(`产品 ${libId} getDocList 无 Result`);
+    }
+    return result as Record<string, ApiDocNode[]>;
+  }
+
+  /** 构建迁移产品节点的路径：沿 ParentID 上溯拼接 Title，顶层加 SecondNav 分组名 */
+  private buildApiPath(
+    nodeMap: Map<number, ApiDocNode>,
+    node: ApiDocNode,
+    productName: string,
+  ): string {
+    const parts: string[] = [];
+    const visited = new Set<number>();
+    let cur: ApiDocNode | undefined = node;
+    let secondNav = '';
+
+    while (cur && !visited.has(cur.DocumentID)) {
+      visited.add(cur.DocumentID);
+      parts.unshift(cur.Title);
+      if (cur.SecondNav?.Name) secondNav = cur.SecondNav.Name;
+      if (!cur.ParentID || cur.ParentID === 0) break;
+      cur = nodeMap.get(cur.ParentID);
+    }
+
+    if (secondNav && parts[0] !== secondNav) parts.unshift(secondNav);
+    if (parts.length > 1 && parts[0] === productName) parts.shift();
+    return parts.join('/');
+  }
+
+  /** 从 getDocList 结果构建文档条目（Type=0 & Status=2 为已发布文档） */
+  private buildEntriesFromApi(
+    result: Record<string, ApiDocNode[]>,
+    libId: number,
+    productName: string,
+    category: string,
+  ): { entries: DocEntry[]; total: number } {
+    const nodeMap = new Map<number, ApiDocNode>();
+    for (const nodes of Object.values(result)) {
+      for (const n of nodes) nodeMap.set(n.DocumentID, n);
+    }
+
+    const entries: DocEntry[] = [];
+    for (const n of nodeMap.values()) {
+      if (n.Type !== 0 || n.Status !== 2) continue;
+      const path = this.buildApiPath(nodeMap, n, productName);
+      entries.push({
+        path: `${category}/${productName}/${path}`,
+        title: n.Title,
+        docType: 'guide',
+        sourceUrl: `${BASE_URL}/docs/${libId}/${n.DocumentID}`,
+        platformId: `${libId}:${n.DocumentID}`,
+      });
+    }
+    return { entries, total: nodeMap.size };
+  }
+
+  /** 通过 getDocDetail 接口获取迁移产品的正文 */
+  private async fetchDocDetailViaApi(libId: number, docId: number): Promise<CurDoc | null> {
+    await this.throttle(CONTENT_DELAY);
+    const resp = await this.client.get('/api/doc/getDocDetail', {
+      params: { LibraryID: libId, DocumentID: docId, type: 'online' },
+      headers: { Accept: 'application/json' },
+    });
+    const result = (resp.data as { Result?: Record<string, unknown> })?.Result;
+    if (!result) return null;
+    return {
+      DocumentID: docId,
+      LibraryID: libId,
+      Title: (result.Title as string) || '',
+      MDContent: (result.MDContent as string) || '',
+      Content: (result.Content as string) || '',
+      ContentType: (result.ContentType as string) || '',
+      UpdatedTime: result.UpdatedTime as string | undefined,
+    };
   }
 
   /** 获取单篇文档的 MDContent */
@@ -250,8 +357,27 @@ export class VolcengineDocsSource implements DocSource {
           `[volcengine] (${productIndex}/${products.length}) ${product.name} (LibID=${product.libId}): ${nodeCount} 节点, ${docCount} 篇文档`,
         );
       } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        console.error(`[volcengine] ✗ ${product.name} (LibID=${product.libId}) 失败: ${msg}`);
+        // _ROUTER_DATA 不可用（产品已迁移到新「智能文档中心」），回退到 JSON API
+        try {
+          const result = await this.fetchDocListViaApi(product.libId);
+          const built = this.buildEntriesFromApi(
+            result,
+            product.libId,
+            product.name,
+            product.category,
+          );
+          entries.push(...built.entries);
+          this.apiLibs.add(product.libId);
+          console.log(
+            `[volcengine] (${productIndex}/${products.length}) ${product.name} (LibID=${product.libId}): [API] ${built.total} 节点, ${built.entries.length} 篇文档`,
+          );
+        } catch (apiError) {
+          const msg = error instanceof Error ? error.message : String(error);
+          const apiMsg = apiError instanceof Error ? apiError.message : String(apiError);
+          console.error(
+            `[volcengine] ✗ ${product.name} (LibID=${product.libId}) 失败 (SSR: ${msg}; API: ${apiMsg})`,
+          );
+        }
       }
     }
 
@@ -269,7 +395,14 @@ export class VolcengineDocsSource implements DocSource {
     const libId = parseInt(libIdStr, 10);
     const docId = parseInt(docIdStr, 10);
 
-    const doc = await this.fetchDocContent(libId, docId);
+    // 迁移产品直接走 JSON API；其余先试 SSR(_ROUTER_DATA)，失败再回退 API
+    let doc: CurDoc | null;
+    if (this.apiLibs.has(libId)) {
+      doc = await this.fetchDocDetailViaApi(libId, docId);
+    } else {
+      doc = await this.fetchDocContent(libId, docId);
+      if (!doc) doc = await this.fetchDocDetailViaApi(libId, docId);
+    }
     if (!doc) {
       throw new Error(`无法获取文档内容: ${entry.title} (${platformId})`);
     }
