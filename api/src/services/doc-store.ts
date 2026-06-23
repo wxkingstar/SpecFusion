@@ -241,6 +241,9 @@ export function upsertErrorCodes(sourceId: string, codes: ErrorCode[]): void {
 
   const runBatch = d.transaction(() => {
     for (const ec of codes) {
+      // 跳过空 code：部分源（如得物）可能解析出 code 为空的错误码行，
+      // 直接插入会触发 NOT NULL 约束导致整批 bulk-upsert 事务回滚（500）
+      if (ec.code == null || String(ec.code).trim() === '') continue;
       stmt.run(
         sourceId,
         ec.code,

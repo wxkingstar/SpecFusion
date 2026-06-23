@@ -10,6 +10,8 @@ export interface DocSource {
   fetchContent(entry: DocEntry): Promise<DocContent>;
   /** 检测自某时间以来的变更（增量同步） */
   detectUpdates(since: Date): Promise<DocEntry[]>;
+  /** 释放资源（如关闭 Playwright 浏览器）。Playwright 类源必须实现，否则进程不会退出 */
+  close?(): Promise<void>;
 }
 
 export interface DocEntry {

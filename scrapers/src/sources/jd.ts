@@ -168,6 +168,70 @@ export class JdSource implements DocSource {
     });
   }
 
+  /**
+   * 等待并捕获"富" listApiGroup 响应（含 groupMap 字段的完整叶子 API 组列表，约 83 个）。
+   *
+   * 改版说明（2026-06）：京东把首页 Tab 触发的 listApiGroup 改为只返回 16 个顶层大类
+   * （商品API/订单API/...），在其 id 上调用 listApi4Overview 会返回空数组。
+   * 而深链概览页（apiCateId=叶子组 id）触发的 listApiGroup 仍返回完整叶子组列表，
+   * 每项含 groupMap 字段。这里通过该字段区分两种响应，只接受富响应。
+   */
+  private waitForLeafGroups(
+    page: Page,
+    timeout = DSM_RESPONSE_TIMEOUT,
+  ): Promise<ApiGroup[]> {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        page.off('response', handler);
+        reject(new Error(`[jd] listApiGroup（叶子组）响应超时 (${timeout}ms)`));
+      }, timeout);
+
+      const handler = async (response: Response) => {
+        try {
+          const url = response.url();
+          if (
+            url.includes(SFF_HOST) &&
+            url.includes('api=dsm.jdo.open.cms.api4home.listApiGroup') &&
+            response.status() === 200
+          ) {
+            const body = await response.json();
+            const data = body?.data;
+            // 仅接受含 groupMap 的富响应（叶子组），忽略 16 项顶层大类精简响应
+            if (Array.isArray(data) && data.length > 0 && 'groupMap' in data[0]) {
+              clearTimeout(timer);
+              page.off('response', handler);
+              resolve(data as ApiGroup[]);
+            }
+          }
+        } catch {
+          /* 忽略非 JSON 响应 */
+        }
+      };
+
+      page.on('response', handler);
+    });
+  }
+
+  /**
+   * 获取指定业务模型下的完整叶子 API 组列表。
+   * 用任一已知叶子组（店铺API, id=88）的深链概览页作为种子触发富 listApiGroup。
+   * 注：叶子组列表与 businessModel 无关（POP/自营 返回相同的 83 组），
+   * businessModel 仅在后续 listApi4Overview 层过滤每个组下可用的 API。
+   */
+  private async fetchLeafGroups(
+    page: Page,
+    bm: BusinessModel,
+  ): Promise<ApiGroup[]> {
+    const groupPromise = this.waitForLeafGroups(page);
+    const seedUrl = `${JD_BASE}/v2/?_=${Date.now()}#/doc/api?apiCateId=88&apiId=-88&apiName=${encodeURIComponent('店铺API概览')}&gwType=0&businessModel=${bm.value}`;
+    await page.goto(seedUrl, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
+    try {
+      return await groupPromise;
+    } catch {
+      return [];
+    }
+  }
+
   // ── fetchCatalog ────────────────────────────────────────────────────────
 
   async fetchCatalog(): Promise<DocEntry[]> {
@@ -186,43 +250,18 @@ export class JdSource implements DocSource {
       console.log(`[jd] 提取业务模型: ${bm.name} (businessModel=${bm.value})`);
 
       try {
-        // 点击业务模型 Tab 并等待 listApiGroup 响应
-        const groupPromise = this.waitForDsmResponse<ApiGroup[]>(
-          page,
-          'dsm.jdo.open.cms.api4home.listApiGroup',
-        );
-
-        // 点击对应 Tab（通过文本匹配）
-        await page.evaluate(`(() => {
-          const tabs = document.querySelectorAll('.jd-tabs__label');
-          for (const tab of tabs) {
-            if (tab.textContent.trim() === ${JSON.stringify(bm.name)}) {
-              tab.click();
-              return true;
-            }
-          }
-          return false;
-        })()`);
-
-        await delay(1000);
-
-        let groups: ApiGroup[];
-        try {
-          const groupResp = await groupPromise;
-          if (groupResp.code !== 200 || !Array.isArray(groupResp.data)) {
-            console.warn(`[jd]   listApiGroup 响应异常: code=${groupResp.code}`);
-            continue;
-          }
-          groups = groupResp.data;
-        } catch (err) {
-          // Tab 切换可能不总是触发 API 调用（如果已缓存），尝试从 DOM 提取
-          console.warn(`[jd]   未捕获 listApiGroup 响应，尝试从 DOM 提取分类`);
-          groups = await this.extractCategoriesFromDom(page);
+        // 获取完整叶子 API 组列表（约 83 个，含"店铺API""B2B开放API"等）。
+        // 见 fetchLeafGroups / waitForLeafGroups 的改版说明。
+        const groups = await this.fetchLeafGroups(page, bm);
+        if (groups.length === 0) {
+          console.warn(`[jd]   未获取到 ${bm.name} 的 API 组列表，跳过`);
+          continue;
         }
 
-        console.log(`[jd]   发现 ${groups.length} 个 API 分类`);
+        console.log(`[jd]   发现 ${groups.length} 个 API 组`);
 
         for (const group of groups) {
+          group.groupName = group.groupName.trim();
           console.log(`[jd]   提取分类: ${group.groupName} (id=${group.id})`);
 
           try {
@@ -393,31 +432,6 @@ export class JdSource implements DocSource {
   }
 
   // ── DOM 降级提取 ───────────────────────────────────────────────────────
-
-  /**
-   * 从 DOM 提取分类列表（API 响应拦截失败时的降级方案）。
-   * 解析左侧菜单的 "概览" 项的 URL 参数。
-   */
-  private async extractCategoriesFromDom(page: Page): Promise<ApiGroup[]> {
-    return page.evaluate(`(() => {
-      const groups = [];
-
-      // 尝试从 URL 参数中提取当前 apiCateId
-      const hash = window.location.hash;
-      const cateMatch = hash.match(/apiCateId=(\\d+)/);
-      const cateName = hash.match(/apiName=([^&]+)/);
-
-      if (cateMatch) {
-        groups.push({
-          id: parseInt(cateMatch[1]),
-          groupName: cateName ? decodeURIComponent(cateName[1]).replace('API概览', '') : '未知分类',
-          josGroupId: 0,
-        });
-      }
-
-      return groups;
-    })()`) as Promise<ApiGroup[]>;
-  }
 
   /**
    * 从概览页 DOM 提取 API 列表（API 响应拦截失败时的降级方案）。

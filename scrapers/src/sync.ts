@@ -180,26 +180,33 @@ export async function diffSource(
   const source = createSource(sourceId);
   const client = createApiClient(apiUrl, adminToken);
 
-  console.log(`[diff] 拉取 ${source.name} 远程目录...`);
-  const entries = await source.fetchCatalog();
-  const remotePaths = entries.map((e) => e.path);
-
-  console.log(`[diff] 拉取本地已有文档列表...`);
-  let localPaths: string[] = [];
   try {
-    const resp = await client.get(`/admin/source-paths/${sourceId}`);
-    localPaths = resp.data as string[];
-  } catch {
-    console.warn('[diff] 无法获取本地文档列表（API 服务未运行？）');
+    console.log(`[diff] 拉取 ${source.name} 远程目录...`);
+    const entries = await source.fetchCatalog();
+    const remotePaths = entries.map((e) => e.path);
+
+    console.log(`[diff] 拉取本地已有文档列表...`);
+    let localPaths: string[] = [];
+    try {
+      const resp = await client.get(`/admin/source-paths/${sourceId}`);
+      localPaths = resp.data as string[];
+    } catch {
+      console.warn('[diff] 无法获取本地文档列表（API 服务未运行？）');
+    }
+
+    const remoteSet = new Set(remotePaths);
+    const localSet = new Set(localPaths);
+
+    const added = remotePaths.filter((p) => !localSet.has(p));
+    const removed = localPaths.filter((p) => !remoteSet.has(p));
+
+    return { source: sourceId, remotePaths, localPaths, added, removed };
+  } finally {
+    // 释放 Playwright 浏览器等资源，确保进程能正常退出
+    if (typeof source.close === 'function') {
+      await source.close().catch(() => {});
+    }
   }
-
-  const remoteSet = new Set(remotePaths);
-  const localSet = new Set(localPaths);
-
-  const added = remotePaths.filter((p) => !localSet.has(p));
-  const removed = localPaths.filter((p) => !remoteSet.has(p));
-
-  return { source: sourceId, remotePaths, localPaths, added, removed };
 }
 
 // ── 核心同步函数 ──────────────────────────────────────────────────────────
@@ -229,6 +236,7 @@ export async function syncSource(
 
   console.log(`[sync] 开始同步 ${source.name} (${source.id}) ...`);
 
+  try {
   // 1. 获取文档目录
   let entries: DocEntry[];
   if (options.incremental) {
@@ -363,6 +371,12 @@ export async function syncSource(
   console.log(`  耗时: ${(result.duration / 1000).toFixed(1)}s`);
 
   return result;
+  } finally {
+    // 释放 Playwright 浏览器等资源，确保进程能正常退出
+    if (typeof source.close === 'function') {
+      await source.close().catch(() => {});
+    }
+  }
 }
 
 // ── 同步所有源 ───────────────────────────────────────────────────────────
