@@ -188,9 +188,19 @@ export function getDocument(docId: string): Document | null {
 }
 
 export function deleteDocument(docId: string): boolean {
-  const info = getDb()
-    .prepare('DELETE FROM documents WHERE id = ?')
-    .run(docId);
+  const d = getDb();
+  // 先取出所属源，删除后同步刷新 sources.doc_count 缓存
+  // （否则 prune 大量删除后缓存会偏大，health/分源统计显示失真）
+  const row = d
+    .prepare('SELECT source_id FROM documents WHERE id = ?')
+    .get(docId) as { source_id: string } | undefined;
+  const info = d.prepare('DELETE FROM documents WHERE id = ?').run(docId);
+  if (info.changes > 0 && row) {
+    const cnt = d
+      .prepare('SELECT COUNT(*) as cnt FROM documents WHERE source_id = ?')
+      .get(row.source_id) as { cnt: number };
+    d.prepare('UPDATE sources SET doc_count = ? WHERE id = ?').run(cnt.cnt, row.source_id);
+  }
   return info.changes > 0;
 }
 
