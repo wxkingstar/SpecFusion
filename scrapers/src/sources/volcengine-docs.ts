@@ -55,20 +55,30 @@ interface CurDoc {
   UpdatedTime?: string;
 }
 
-/**
- * getDocList JSON 接口返回的节点（新文档中心「智能文档中心」迁移产品使用）。
- * Result 按 SecondNav ID 分组，每组是一个扁平节点数组，节点间通过 ParentID 关联。
- */
-interface ApiDocNode {
+// ─── 新文档中心（Garfish 微前端 @volc-intelligent/doccenter）接口结构 ──────────
+// 已迁移产品页不再内嵌 window._ROUTER_DATA，目录树/正文改由以下 JSON 接口提供：
+//   目录树：GET /api/doc/getDocList?LibraryID={libId}&DataSchema=all_second_nav&type=online
+//   正文：  GET /api/doc/getDocDetail?LibraryID={libId}&DocumentID={docId}&type=online
+// 这两个接口对所有产品通用，且不受站点 WAF 反爬挑战影响，用作迁移产品的抓取路径。
+
+/** getDocList 扁平节点 */
+interface DocListNode {
   DocumentID: number;
   Title: string;
   ParentID: number;
-  LibraryID: number;
-  Type: number; // 0 = document, 1 = folder
-  Status: number; // 2 = published
+  Type: number;    // 0 = document, 1 = folder/nav
+  Status: number;  // 2 = published
   ContentType?: string;
+  Index?: number;
+  Language?: string;
+  DocumentCode?: string;
+  /** 仅顶层节点携带，标识所属二级导航分组 */
   SecondNav?: { ID: number; Name: string } | null;
+  Childrens?: unknown;
 }
+
+/** getDocList Result：按二级导航(SecondNav) ID 分组的扁平节点数组 */
+type DocListResult = Record<string, DocListNode[]>;
 
 // ─── Utility helpers ────────────────────────────────────────────────────────
 
@@ -132,6 +142,29 @@ function buildNodePath(
   return parts.join('/');
 }
 
+/** 从 getDocList 扁平节点构建路径：secondNavName/folder.../docTitle（沿 ParentID 上溯） */
+function buildApiNodePath(
+  byId: Map<number, DocListNode>,
+  node: DocListNode,
+  navName: string,
+): string {
+  const parts: string[] = [];
+  let cur: DocListNode | undefined = node;
+  const visited = new Set<number>();
+
+  while (cur && !visited.has(cur.DocumentID)) {
+    visited.add(cur.DocumentID);
+    parts.unshift(cur.Title);
+    if (cur.ParentID === 0) break;
+    cur = byId.get(cur.ParentID);
+  }
+
+  // 顶层加上二级导航分组名（如「文档指南」「API参考」）
+  if (navName) parts.unshift(navName);
+
+  return parts.join('/');
+}
+
 // ─── VolcengineDocsSource class ─────────────────────────────────────────────
 
 export class VolcengineDocsSource implements DocSource {
@@ -140,8 +173,6 @@ export class VolcengineDocsSource implements DocSource {
 
   private client: AxiosInstance;
   private requestCount = 0;
-  /** 已迁移到新文档中心、需走 JSON API 的产品 libId（fetchCatalog 中填充，fetchContent 复用） */
-  private apiLibs = new Set<number>();
 
   constructor() {
     this.client = axios.create({
@@ -170,121 +201,69 @@ export class VolcengineDocsSource implements DocSource {
 
   // ─── Data fetching ─────────────────────────────────────────────────────
 
-  /** 获取文档中心首页的产品分类列表 */
+  /**
+   * 获取文档中心首页的产品分类列表。
+   * 首页已迁移为客户端渲染，SSR(_ROUTER_DATA) 仅间歇性返回（夹杂客户端壳 / WAF 反爬挑战），
+   * 故重试退避直到拿到含 categoryList 的 SSR 变体。
+   */
   private async fetchCategoryList(): Promise<CategoryItem[]> {
-    const resp = await this.client.get('/docs');
-    const data = extractRouterData(resp.data);
-    if (!data) throw new Error('无法解析文档中心首页 _ROUTER_DATA');
-
-    const pageData = getLoaderData(data, 'docs/page');
-    if (!pageData) throw new Error('无法获取 docs/page loaderData');
-
-    return pageData.categoryList as CategoryItem[];
+    const maxAttempts = 10;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const resp = await this.client.get('/docs');
+      const data = extractRouterData(resp.data);
+      const pageData = data ? getLoaderData(data, 'docs/page') : null;
+      const categoryList = pageData?.categoryList as CategoryItem[] | undefined;
+      if (Array.isArray(categoryList) && categoryList.length > 0) {
+        return categoryList;
+      }
+      if (attempt < maxAttempts) {
+        console.log(`[volcengine] 首页未返回 SSR 目录数据，退避重试 ${attempt}/${maxAttempts}...`);
+        await delay(2000);
+      }
+    }
+    throw new Error('无法解析文档中心首页 _ROUTER_DATA（多次重试后仍失败）');
   }
 
-  /** 获取单个产品的文档树（nodeMap） */
-  private async fetchProductTree(libId: number): Promise<Record<string, TreeNode>> {
+  /**
+   * 获取单个产品的文档树（旧 SSR 路径）。
+   * 返回 nodeMap；若页面已迁移到新文档中心（无 _ROUTER_DATA / nodeMap）则返回 null，
+   * 由调用方改走新版 getDocList API。
+   */
+  private async fetchProductTree(libId: number): Promise<Record<string, TreeNode> | null> {
     await this.throttle(CATALOG_DELAY);
     const resp = await this.client.get(`/docs/${libId}`, { params: { lang: 'zh' } });
     const data = extractRouterData(resp.data);
-    if (!data) throw new Error(`无法解析产品 ${libId} 页面`);
+    if (!data) return null;
 
     const pageData = getLoaderData(data, 'docs/(libid)/(docid$)/page');
-    if (!pageData?.nodeMap) {
-      throw new Error(`产品 ${libId} 无 nodeMap`);
-    }
+    if (!pageData?.nodeMap) return null;
 
     return pageData.nodeMap as Record<string, TreeNode>;
   }
 
-  // ─── 新文档中心 JSON 接口（迁移产品，绕 WAF，无需鉴权） ──────────────────
-
-  /**
-   * 通过 getDocList 接口获取迁移产品的目录树。
-   * 返回按 SecondNav ID 分组的节点数组（Result）。
-   */
-  private async fetchDocListViaApi(libId: number): Promise<Record<string, ApiDocNode[]>> {
+  /** 新文档中心：获取产品完整目录树（按二级导航分组的扁平节点） */
+  private async fetchDocListApi(libId: number): Promise<DocListResult> {
     await this.throttle(CATALOG_DELAY);
     const resp = await this.client.get('/api/doc/getDocList', {
       params: { LibraryID: libId, DataSchema: 'all_second_nav', type: 'online' },
       headers: { Accept: 'application/json' },
     });
-    const result = (resp.data as { Result?: unknown })?.Result;
+    const result = resp.data?.Result;
     if (!result || typeof result !== 'object') {
-      throw new Error(`产品 ${libId} getDocList 无 Result`);
+      throw new Error(`getDocList 返回异常 (LibID=${libId})`);
     }
-    return result as Record<string, ApiDocNode[]>;
+    return result as DocListResult;
   }
 
-  /** 构建迁移产品节点的路径：沿 ParentID 上溯拼接 Title，顶层加 SecondNav 分组名 */
-  private buildApiPath(
-    nodeMap: Map<number, ApiDocNode>,
-    node: ApiDocNode,
-    productName: string,
-  ): string {
-    const parts: string[] = [];
-    const visited = new Set<number>();
-    let cur: ApiDocNode | undefined = node;
-    let secondNav = '';
-
-    while (cur && !visited.has(cur.DocumentID)) {
-      visited.add(cur.DocumentID);
-      parts.unshift(cur.Title);
-      if (cur.SecondNav?.Name) secondNav = cur.SecondNav.Name;
-      if (!cur.ParentID || cur.ParentID === 0) break;
-      cur = nodeMap.get(cur.ParentID);
-    }
-
-    if (secondNav && parts[0] !== secondNav) parts.unshift(secondNav);
-    if (parts.length > 1 && parts[0] === productName) parts.shift();
-    return parts.join('/');
-  }
-
-  /** 从 getDocList 结果构建文档条目（Type=0 & Status=2 为已发布文档） */
-  private buildEntriesFromApi(
-    result: Record<string, ApiDocNode[]>,
-    libId: number,
-    productName: string,
-    category: string,
-  ): { entries: DocEntry[]; total: number } {
-    const nodeMap = new Map<number, ApiDocNode>();
-    for (const nodes of Object.values(result)) {
-      for (const n of nodes) nodeMap.set(n.DocumentID, n);
-    }
-
-    const entries: DocEntry[] = [];
-    for (const n of nodeMap.values()) {
-      if (n.Type !== 0 || n.Status !== 2) continue;
-      const path = this.buildApiPath(nodeMap, n, productName);
-      entries.push({
-        path: `${category}/${productName}/${path}`,
-        title: n.Title,
-        docType: 'guide',
-        sourceUrl: `${BASE_URL}/docs/${libId}/${n.DocumentID}`,
-        platformId: `${libId}:${n.DocumentID}`,
-      });
-    }
-    return { entries, total: nodeMap.size };
-  }
-
-  /** 通过 getDocDetail 接口获取迁移产品的正文 */
-  private async fetchDocDetailViaApi(libId: number, docId: number): Promise<CurDoc | null> {
+  /** 新文档中心：获取单篇文档正文（与 CurDoc 同 shape，含 MDContent） */
+  private async fetchDocDetailApi(libId: number, docId: number): Promise<CurDoc | null> {
     await this.throttle(CONTENT_DELAY);
     const resp = await this.client.get('/api/doc/getDocDetail', {
-      params: { LibraryID: libId, DocumentID: docId, type: 'online' },
+      params: { LibraryID: libId, DocumentID: docId, AuditDocumentID: '', type: 'online' },
       headers: { Accept: 'application/json' },
     });
-    const result = (resp.data as { Result?: Record<string, unknown> })?.Result;
-    if (!result) return null;
-    return {
-      DocumentID: docId,
-      LibraryID: libId,
-      Title: (result.Title as string) || '',
-      MDContent: (result.MDContent as string) || '',
-      Content: (result.Content as string) || '',
-      ContentType: (result.ContentType as string) || '',
-      UpdatedTime: result.UpdatedTime as string | undefined,
-    };
+    const result = resp.data?.Result;
+    return result && typeof result === 'object' ? (result as CurDoc) : null;
   }
 
   /** 获取单篇文档的 MDContent */
@@ -326,62 +305,85 @@ export class VolcengineDocsSource implements DocSource {
     for (const product of products) {
       productIndex++;
       try {
+        // 旧 SSR 路径优先；迁移到新文档中心的产品（nodeMap 为 null）改走新版 API
         const nodeMap = await this.fetchProductTree(product.libId);
-        const nodeCount = Object.keys(nodeMap).length - 1; // exclude root '0'
-
-        // 提取所有已发布的文档节点（Type=0, Status=2）
-        let docCount = 0;
-        for (const [nodeId, node] of Object.entries(nodeMap)) {
-          if (nodeId === '0') continue;
-          const val = node.value;
-          if (!val) continue;
-          // Type 0 = document page, Status 2 = published
-          if (val.Type !== 0 || val.Status !== 2) continue;
-
-          const path = buildNodePath(nodeMap, nodeId, product.name);
-
-          entries.push({
-            path: `${product.category}/${product.name}/${path}`,
-            title: val.Title,
-            docType: 'guide',
-            sourceUrl: `${BASE_URL}/docs/${product.libId}/${val.DocumentID}`,
-            platformId: `${product.libId}:${val.DocumentID}`,
-            lastUpdated: val.UpdatedTime
-              ? new Date(val.UpdatedTime).toISOString().split('T')[0]
-              : undefined,
-          });
-          docCount++;
+        let productEntries: DocEntry[];
+        let via: string;
+        if (nodeMap) {
+          productEntries = this.entriesFromNodeMap(nodeMap, product);
+          via = 'SSR';
+        } else {
+          const result = await this.fetchDocListApi(product.libId);
+          productEntries = this.entriesFromDocList(result, product);
+          via = 'API';
         }
 
+        entries.push(...productEntries);
         console.log(
-          `[volcengine] (${productIndex}/${products.length}) ${product.name} (LibID=${product.libId}): ${nodeCount} 节点, ${docCount} 篇文档`,
+          `[volcengine] (${productIndex}/${products.length}) ${product.name} (LibID=${product.libId}) [${via}]: ${productEntries.length} 篇文档`,
         );
       } catch (error) {
-        // _ROUTER_DATA 不可用（产品已迁移到新「智能文档中心」），回退到 JSON API
-        try {
-          const result = await this.fetchDocListViaApi(product.libId);
-          const built = this.buildEntriesFromApi(
-            result,
-            product.libId,
-            product.name,
-            product.category,
-          );
-          entries.push(...built.entries);
-          this.apiLibs.add(product.libId);
-          console.log(
-            `[volcengine] (${productIndex}/${products.length}) ${product.name} (LibID=${product.libId}): [API] ${built.total} 节点, ${built.entries.length} 篇文档`,
-          );
-        } catch (apiError) {
-          const msg = error instanceof Error ? error.message : String(error);
-          const apiMsg = apiError instanceof Error ? apiError.message : String(apiError);
-          console.error(
-            `[volcengine] ✗ ${product.name} (LibID=${product.libId}) 失败 (SSR: ${msg}; API: ${apiMsg})`,
-          );
-        }
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error(`[volcengine] ✗ ${product.name} (LibID=${product.libId}) 失败: ${msg}`);
       }
     }
 
     console.log(`[volcengine] 目录加载完成: ${products.length} 个产品, ${entries.length} 篇文档`);
+    return entries;
+  }
+
+  /** 旧 SSR nodeMap → DocEntry[]（Type=0, Status=2 为已发布文档） */
+  private entriesFromNodeMap(
+    nodeMap: Record<string, TreeNode>,
+    product: { libId: number; name: string; category: string },
+  ): DocEntry[] {
+    const entries: DocEntry[] = [];
+    for (const [nodeId, node] of Object.entries(nodeMap)) {
+      if (nodeId === '0') continue;
+      const val = node.value;
+      if (!val) continue;
+      if (val.Type !== 0 || val.Status !== 2) continue;
+
+      const path = buildNodePath(nodeMap, nodeId, product.name);
+      entries.push({
+        path: `${product.category}/${product.name}/${path}`,
+        title: val.Title,
+        docType: 'guide',
+        sourceUrl: `${BASE_URL}/docs/${product.libId}/${val.DocumentID}`,
+        platformId: `${product.libId}:${val.DocumentID}`,
+        lastUpdated: val.UpdatedTime
+          ? new Date(val.UpdatedTime).toISOString().split('T')[0]
+          : undefined,
+      });
+    }
+    return entries;
+  }
+
+  /** 新文档中心 getDocList → DocEntry[]（按 SecondNav 分组，沿 ParentID 上溯构建路径） */
+  private entriesFromDocList(
+    result: DocListResult,
+    product: { libId: number; name: string; category: string },
+  ): DocEntry[] {
+    const entries: DocEntry[] = [];
+    for (const nodes of Object.values(result)) {
+      if (!Array.isArray(nodes)) continue;
+
+      const byId = new Map<number, DocListNode>();
+      for (const n of nodes) byId.set(n.DocumentID, n);
+      const navName = nodes.find((n) => n.SecondNav?.Name)?.SecondNav?.Name ?? '';
+
+      for (const n of nodes) {
+        if (n.Type !== 0 || n.Status !== 2) continue;
+        const path = buildApiNodePath(byId, n, navName);
+        entries.push({
+          path: `${product.category}/${product.name}/${path}`,
+          title: n.Title,
+          docType: 'guide',
+          sourceUrl: `${BASE_URL}/docs/${product.libId}/${n.DocumentID}`,
+          platformId: `${product.libId}:${n.DocumentID}`,
+        });
+      }
+    }
     return entries;
   }
 
@@ -395,13 +397,10 @@ export class VolcengineDocsSource implements DocSource {
     const libId = parseInt(libIdStr, 10);
     const docId = parseInt(docIdStr, 10);
 
-    // 迁移产品直接走 JSON API；其余先试 SSR(_ROUTER_DATA)，失败再回退 API
-    let doc: CurDoc | null;
-    if (this.apiLibs.has(libId)) {
-      doc = await this.fetchDocDetailViaApi(libId, docId);
-    } else {
-      doc = await this.fetchDocContent(libId, docId);
-      if (!doc) doc = await this.fetchDocDetailViaApi(libId, docId);
+    // 旧 SSR 路径优先；迁移产品页无 _ROUTER_DATA，回退到新版 getDocDetail API
+    let doc = await this.fetchDocContent(libId, docId);
+    if (!doc) {
+      doc = await this.fetchDocDetailApi(libId, docId);
     }
     if (!doc) {
       throw new Error(`无法获取文档内容: ${entry.title} (${platformId})`);
