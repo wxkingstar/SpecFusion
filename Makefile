@@ -126,8 +126,8 @@ upload-db: ## 上传 data/specfusion.db 到 K8s PVC
 	$(KC) scale deployment/$(DEPLOY_NAME) --replicas=0
 	@$(KC) wait pod -l app=$(DEPLOY_NAME) --for=delete --timeout=60s 2>/dev/null || true
 	@echo "==> 创建临时 Pod 挂载 PVC..."
-	$(KC) run $(UPLOAD_POD) --image=busybox --restart=Never \
-		--overrides='{"spec":{"containers":[{"name":"upload","image":"busybox","command":["sleep","3600"],"volumeMounts":[{"name":"data","mountPath":"/app/data"}]}],"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"$(PVC_NAME)"}}]}}'
+	$(KC) run $(UPLOAD_POD) --image=$(IMAGE):$(TAG) --restart=Never \
+		--overrides='{"spec":{"containers":[{"name":"upload","image":"$(IMAGE):$(TAG)","command":["sleep","3600"],"volumeMounts":[{"name":"data","mountPath":"/app/data"}]}],"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"$(PVC_NAME)"}}]}}'
 	$(KC) wait pod/$(UPLOAD_POD) --for=condition=Ready --timeout=60s
 	@echo "==> 清理旧 WAL 文件..."
 	$(KC) exec $(UPLOAD_POD) -- rm -f /app/data/specfusion.db-wal /app/data/specfusion.db-shm
