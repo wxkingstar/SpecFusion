@@ -197,7 +197,7 @@ curl -s -G "http://specfusion.inagora.org/api/recent" \
 
 | 平台 | source 参数 | 文档数量 | 覆盖范围 |
 |------|-----------|---------|---------|
-| 企业微信 | wecom | ~2,870 | 服务端 API、客户端 API、应用开发 |
+| 企业微信 | wecom | ~2,740 | 服务端 API、客户端 API、应用开发 |
 | 飞书 | feishu | ~4,260 | 服务端 API、事件订阅、小程序 |
 | 钉钉 | dingtalk | ~2,750 | 企业内部应用、服务端 API、客户端 JSAPI |
 | 淘宝开放平台 | taobao | ~6,940 | 商品、交易、物流、店铺、用户等 API |

@@ -566,8 +566,13 @@ export class WecomSource implements DocSource {
       await page.waitForFunction(
         `(() => {
           const docContent = document.querySelector('.doc-content, .markdown-body, [class*="doc-"]');
-          const loginForm = document.querySelector('[class*="login"], [class*="captcha"], [class*="verify"]');
-          return docContent && !loginForm;
+          // 只检测「可见的」验证组件；页头常驻的 login 按钮类名会永久存在，不能作为未通过的依据
+          const blockers = document.querySelectorAll('[class*="captcha"], [class*="verify"], iframe[src*="captcha"]');
+          const visibleBlocker = Array.from(blockers).some((el) => {
+            const rect = el.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+          });
+          return docContent && !visibleBlocker;
         })()`,
         { timeout: 300000 }, // 5 分钟超时
       );
