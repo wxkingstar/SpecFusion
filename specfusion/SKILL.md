@@ -3,7 +3,7 @@ name: specfusion
 description: |
   企业微信 飞书 钉钉 淘宝 小红书 抖音电商 微信小程序 微信小店 拼多多 有赞 微信支付 支付宝 京东 SHEIN 得物 火山引擎 阿里云百炼 泛微 北森 API文档搜索。
   WeCom Feishu Lark DingTalk Taobao Xiaohongshu Douyin WeChat Pinduoduo Youzan Alipay JD SHEIN Dewu Volcengine Bailian Weaver eTeams Beisen iTalent API docs search.
-  62,000+ API docs across 20 Chinese open platforms with full-text search. 搜索20个开放平台的API开发文档，支持中文全文检索。
+  65,000+ API docs across 20 Chinese open platforms with full-text search. 搜索20个开放平台的API开发文档，支持中文全文检索。
   wecom feishu lark dingtalk taobao xiaohongshu xhs douyin jinritemai wechat miniprogram wechat-shop wechat-pay pinduoduo youzanyun alipay jd shein dewu poizon volcengine ecs bailian dashscope qwen doubao weaver eteams e-teams ecology beisen italent openapi webhook access_token
   抖店 小程序 小店 pdd 京东开放平台 得物开放平台 火山引擎云服务器 火山引擎文档中心 电商开放平台 接口文档 开放平台 火山方舟 对象存储 容器服务 豆包 豆包大模型 百炼 千问 通义千问 通义 大模型 DashScope 泛微 泛微OA ecology e-cology e-teams eteams 北森 北森云 iTalent 招聘 绩效 薪酬 人事
 user-invocable: true
@@ -197,23 +197,23 @@ curl -s -G "http://specfusion.inagora.org/api/recent" \
 
 | 平台 | source 参数 | 文档数量 | 覆盖范围 |
 |------|-----------|---------|---------|
-| 企业微信 | wecom | ~2,690 | 服务端 API、客户端 API、应用开发 |
-| 飞书 | feishu | ~4,160 | 服务端 API、事件订阅、小程序 |
-| 钉钉 | dingtalk | ~5,020 | 企业内部应用、服务端 API、客户端 JSAPI |
-| 淘宝开放平台 | taobao | ~6,770 | 商品、交易、物流、店铺、用户等 API |
+| 企业微信 | wecom | ~2,870 | 服务端 API、客户端 API、应用开发 |
+| 飞书 | feishu | ~4,260 | 服务端 API、事件订阅、小程序 |
+| 钉钉 | dingtalk | ~2,750 | 企业内部应用、服务端 API、客户端 JSAPI |
+| 淘宝开放平台 | taobao | ~6,940 | 商品、交易、物流、店铺、用户等 API |
 | 小红书 | xiaohongshu | ~100 | 电商开放平台 API（订单、商品、售后、物流等） |
-| 抖音电商开放平台 | douyin | ~1,330 | 商品、订单、物流、售后、精选联盟、即时零售等 API |
+| 抖音电商开放平台 | douyin | ~1,390 | 商品、订单、物流、售后、精选联盟、即时零售等 API |
 | 微信小程序 | wechat-miniprogram | ~470 | 服务端 API（登录、用户信息、小程序码、客服、数据分析、安全、物流等） |
-| 微信小店 | wechat-shop | ~550 | 商品管理、订单管理、售后管理、物流发货、资金结算、营销优惠券、品牌资质、事件通知等 API |
+| 微信小店 | wechat-shop | ~490 | 商品管理、订单管理、售后管理、物流发货、资金结算、营销优惠券、品牌资质、事件通知等 API |
 | 拼多多开放平台 | pinduoduo | ~280 | 订单、商品、物流、售后、营销、店铺、虚拟类目、多多进宝等 API |
 | 有赞开放平台 | youzan | ~1,240 | 用户、会员、商品、交易、物流、营销、店铺、分销、财务、美业等 API |
-| 微信支付 | wechat-pay | ~580 | JSAPI/APP/H5/Native/小程序支付、退款、分账、合单支付、代金券、商家转账等 API |
+| 微信支付 | wechat-pay | ~550 | JSAPI/APP/H5/Native/小程序支付、退款、分账、合单支付、代金券、商家转账等 API |
 | 支付宝开放平台 | alipay | ~600 | 当面付、APP支付、手机网站支付、电脑网站支付、资金、会员、营销、安全等 API |
-| 京东商家开放平台 | jd | ~6,100 | 商品、订单、物流、售后、促销、店铺、数据、发票、供应商等 API |
-| SHEIN开放平台 | shein | ~210 | 密钥授权、商品、订单、退货退款、采购单、库存、财务、物流、Webhook 等 API |
-| 得物开放平台 | dewu | ~260 | 商品、订单、售后、出价、入仓、开票、文件、对账单等 API |
-| 火山引擎云服务器 | volcengine-ecs | ~137 | 实例、镜像、密钥对、安全组、地域、部署集、专有宿主机、云助手、补丁管理等 API |
-| 火山引擎文档中心 | volcengine | ~29,930 | 184 个云产品文档：计算、AI、网络、存储、数据库、容器、安全、CDN、视频云、大数据等 |
-| 阿里云百炼 | bailian | ~1,330 | 千问大模型、DashScope SDK、OpenAI兼容接口、语音合成/识别、图像/视频生成、应用开发等 |
+| 京东商家开放平台 | jd | ~6,290 | 商品、订单、物流、售后、促销、店铺、数据、发票、供应商等 API |
+| SHEIN开放平台 | shein | ~240 | 密钥授权、商品、订单、退货退款、采购单、库存、财务、物流、Webhook 等 API |
+| 得物开放平台 | dewu | ~270 | 商品、订单、售后、出价、入仓、开票、文件、对账单等 API |
+| 火山引擎云服务器 | volcengine-ecs | ~121 | 实例、镜像、密钥对、安全组、地域、部署集、专有宿主机、云助手、补丁管理等 API |
+| 火山引擎文档中心 | volcengine | ~34,000 | 179 个云产品文档：计算、AI、网络、存储、数据库、容器、安全、CDN、视频云、大数据等 |
+| 阿里云百炼 | bailian | ~1,290 | 千问大模型、DashScope SDK、OpenAI兼容接口、语音合成/识别、图像/视频生成、应用开发等 |
 | 泛微 e-teams 开放平台 | weaver | ~500 | 认证免登、组织架构、人员、工作流程、业务表单、任务、考勤、CRM、订单、文档、日程等 API |
-| 北森 iTalent 开放平台 | beisen | ~1,050 | 招聘、组织员工、假勤、薪酬、绩效、目标、学习云、干部管理、360评估、PaaS 平台等 API |
+| 北森 iTalent 开放平台 | beisen | ~1,080 | 招聘、组织员工、假勤、薪酬、绩效、目标、学习云、干部管理、360评估、PaaS 平台等 API |

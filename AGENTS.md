@@ -5,12 +5,13 @@
 ## 项目结构
 
 ```
-specfusion/
+SpecFusion/
 ├── api/            # API 服务（Fastify + SQLite）
 ├── scrapers/       # 文档抓取/同步脚本（仅本地使用，不部署到服务器）
 ├── scripts/        # 部署脚本
-├── skill/          # Skill 文件（SKILL.md + sources.md）
+├── specfusion/     # Skill 文件（SKILL.md）
 ├── data/           # SQLite 数据库（specfusion.db）
+├── Makefile        # K8s 部署 + 全量同步命令（make help 查看）
 ```
 
 ## 开发命令

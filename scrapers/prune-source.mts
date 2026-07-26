@@ -36,6 +36,15 @@ const resp = await fetch(`${API}/admin/source-paths/${source}`, {
 const localPaths: string[] = await resp.json();
 console.log(`[prune] 本地 ${localPaths.length} 篇`);
 
+// 远程目录抓取失败/被限流时可能返回空或严重缺失，此时删除会清空整个源。
+// 远程数量不足本地一半视为目录异常，拒绝执行。
+if (localPaths.length > 0 && remote.size < localPaths.length * 0.5) {
+  console.error(
+    `[prune] ✗ 远程目录数量异常 (${remote.size} < 本地 ${localPaths.length} 的 50%)，疑似目录抓取失败，中止。`
+  );
+  process.exit(1);
+}
+
 const removed = localPaths.filter((p) => !remote.has(p));
 console.log(`[prune] 待删除残留 ${removed.length} 篇 (${apply ? '真实删除' : 'DRY-RUN'})`);
 removed.slice(0, 10).forEach((p) => console.log('   - ' + p));
