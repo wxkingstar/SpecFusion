@@ -1,5 +1,10 @@
 # SpecFusion
 
+[![GitHub stars](https://img.shields.io/github/stars/wxkingstar/SpecFusion?style=flat-square)](https://github.com/wxkingstar/SpecFusion/stargazers)
+[![License: MIT](https://img.shields.io/github/license/wxkingstar/SpecFusion?style=flat-square)](LICENSE)
+[![DSH plugin](https://img.shields.io/npm/v/@wxkingstar/specfusion-dsh?style=flat-square&label=DSH%20plugin)](https://www.npmjs.com/package/@wxkingstar/specfusion-dsh)
+[![官网](https://img.shields.io/website?url=https%3A%2F%2Fspecfusion.kingstar.xin&label=官网&style=flat-square)](https://specfusion.kingstar.xin/)
+
 🌐 **官网：[specfusion.kingstar.xin](https://specfusion.kingstar.xin/)**
 
 **在 Claude Code 里直接搜企业微信、飞书、钉钉、淘宝开放平台、小红书、抖音电商开放平台、微信小程序、微信小店、拼多多开放平台、有赞开放平台、微信支付、支付宝开放平台、京东商家开放平台、SHEIN开放平台、得物开放平台、火山引擎、阿里云百炼、泛微 e-teams 开放平台、北森 iTalent 开放平台的 API 文档。**
@@ -52,7 +57,17 @@ npx skills find "jd"          # 搜索京东相关技能
 # ... 支持所有已接入平台的英文名搜索
 ```
 
-### 方式二：手动安装
+### 方式二：DeepSeek Harness 插件
+
+在 DeepSeek Harness 中安装 SpecFusion 插件（自动注册 skill + 5 个原生搜索工具，无需 Bash + curl）：
+
+```bash
+dsh plugin --profile web add @wxkingstar/specfusion-dsh
+```
+
+安装后重启 `dsh web` 即可。插件目录见 [`dsh-plugin/`](dsh-plugin/)。
+
+### 方式三：手动安装
 
 **Claude Code（macOS / Linux）：**
 
@@ -204,11 +219,11 @@ docker run -d \
 
 ```bash
 # macOS
-sed -i '' 's|http://specfusion.inagora.org/api|http://your-host:3456/api|g' \
+sed -i '' 's|https://specfusion.inagora.org/api|http://your-host:3456/api|g' \
   ~/.claude/skills/specfusion/SKILL.md
 
 # Linux
-sed -i 's|http://specfusion.inagora.org/api|http://your-host:3456/api|g' \
+sed -i 's|https://specfusion.inagora.org/api|http://your-host:3456/api|g' \
   ~/.claude/skills/specfusion/SKILL.md
 ```
 

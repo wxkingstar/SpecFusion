@@ -24,14 +24,14 @@ compatibility: Requires network access to specfusion.inagora.org (first-party AP
 
 ## API 端点
 
-Base URL: `http://specfusion.inagora.org/api`
+Base URL: `https://specfusion.inagora.org/api`
 
 ## 搜索文档
 
 使用 Bash + curl 调用搜索接口：
 
 ```bash
-curl -s -G "http://specfusion.inagora.org/api/search" \
+curl -s -G "https://specfusion.inagora.org/api/search" \
   --data-urlencode "q=发送应用消息" -d "source=wecom" -d "limit=5"
 ```
 
@@ -54,8 +54,8 @@ curl -s -G "http://specfusion.inagora.org/api/search" \
 找到目标文档后，获取文档内容：
 
 ```bash
-curl -s "http://specfusion.inagora.org/api/doc/{doc_id}"                  # 返回全文 Markdown
-curl -s "http://specfusion.inagora.org/api/doc/{doc_id}?summary=true"     # 返回结构化摘要（~1-2KB）
+curl -s "https://specfusion.inagora.org/api/doc/{doc_id}"                  # 返回全文 Markdown
+curl -s "https://specfusion.inagora.org/api/doc/{doc_id}?summary=true"     # 返回结构化摘要（~1-2KB）
 ```
 
 两种模式都直接返回 Markdown 纯文本（非 JSON），可直接阅读。
@@ -65,7 +65,7 @@ curl -s "http://specfusion.inagora.org/api/doc/{doc_id}?summary=true"     # 返�
 ## 查看可用文档源
 
 ```bash
-curl -s "http://specfusion.inagora.org/api/sources"
+curl -s "https://specfusion.inagora.org/api/sources"
 ```
 
 返回所有已接入的文档源及其文档数量（Markdown 格式）。
@@ -75,7 +75,7 @@ curl -s "http://specfusion.inagora.org/api/sources"
 不确定该搜什么时，查看各平台的文档分类：
 
 ```bash
-curl -s "http://specfusion.inagora.org/api/categories?source=wecom"
+curl -s "https://specfusion.inagora.org/api/categories?source=wecom"
 ```
 
 返回指定平台（或全部平台）的文档分类及数量，帮助发现可用的 API 领域。
@@ -83,7 +83,7 @@ curl -s "http://specfusion.inagora.org/api/categories?source=wecom"
 找到感兴趣的分类后，可以下钻查看该分类下的具体文档列表：
 
 ```bash
-curl -s "http://specfusion.inagora.org/api/categories/wecom/001-企业内部开发"
+curl -s "https://specfusion.inagora.org/api/categories/wecom/001-企业内部开发"
 ```
 
 参数说明：
@@ -98,7 +98,7 @@ curl -s "http://specfusion.inagora.org/api/categories/wecom/001-企业内部开�
 追踪文档变更，查看近期更新的文档：
 
 ```bash
-curl -s -G "http://specfusion.inagora.org/api/recent" \
+curl -s -G "https://specfusion.inagora.org/api/recent" \
   -d "source=wecom" -d "days=7" -d "limit=20"
 ```
 
@@ -111,7 +111,7 @@ curl -s -G "http://specfusion.inagora.org/api/recent" \
 
 ## 使用流程
 
-1. **检查服务**：用 `curl -s http://specfusion.inagora.org/api/health` 确认 API 可用
+1. **检查服务**：用 `curl -s https://specfusion.inagora.org/api/health` 确认 API 可用
 2. **提取关键词**：从用户问题中提取搜索词，注意优先级：
    - 用户提到错误码数字（如 60011、40001）→ 直接用数字搜索，系统有专用错误码索引
    - 用户提供了 API 路径（如 `/cgi-bin/message/send`）→ 直接用路径搜索

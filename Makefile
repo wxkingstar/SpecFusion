@@ -15,7 +15,7 @@ K8S_CTX     := ol3
 K8S_NS      := ai-infra
 DEPLOY_NAME := specfusion
 PVC_NAME    := specfusion-data-pvc
-HEALTH_URL  := http://specfusion.inagora.org/api/health
+HEALTH_URL  := https://specfusion.inagora.org/api/health
 
 DB_FILE     := data/specfusion.db
 UPLOAD_POD  := specfusion-upload

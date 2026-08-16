@@ -1,0 +1,12 @@
+# SpecFusion bundle patch: 向 profile 注入本插件。
+#
+# 单条 insert 挂载到 profile 空根之上；`name` 是插件包名（由 loader 解析并
+# 加载其 lib/index.js 导出的 apply/inject/name/Config），`id` 供用户层 patch
+# 按行定位覆盖（例如在 cordis.patch.yml 里覆盖 baseUrl）。
+#
+# 插件自身的 Config 已提供 baseUrl 默认值 + SPECFUSION_BASE_URL 环境变量回退，
+# 因此这里无需额外 config。
+
+- insert:
+    - id: specfusion-dsh
+      name: '@wxkingstar/specfusion-dsh'
