@@ -65,6 +65,14 @@ export function initTokenizer(userDictPath?: string): void {
 /**
  * 对文本进行分词，返回空格分隔的 token 字符串。
  *
+ * 索引端（scrapers 写入 tokenized_title / tokenized_content）和查询端
+ * （search-engine 拼 FTS5 MATCH 表达式）必须共用这一个函数。FTS5 里空格是
+ * 隐式 AND，查询一旦切出索引中不存在的 token，整条查询就会落空返回 0 条 ——
+ * 曾用 cutForSearch 做查询端分词，把「自定义」切成「自定 定义 自定义」，
+ * 而索引里只有「自定义」，导致所有含此类复合词的查询恒为 0 条。
+ *
+ * 要提高召回率只能两端同时改，不能只改一端。
+ *
  * 测试用例：
  *   "发送应用消息" → "发送 应用消息"（"应用消息"为自定义词典词条）
  *   "access_token" → "access_token"
@@ -77,27 +85,11 @@ export function tokenize(text: string): string {
   return segmentText(text);
 }
 
-/**
- * 对搜索查询进行分词。
- * 使用 cutForSearch 进行更细粒度的切分，提高召回率。
- * 自动去重（cutForSearch 可能同时产生细粒度和粗粒度分词）。
- */
-export function tokenizeForSearch(query: string): string {
-  if (!initialized) initTokenizer();
-  const result = segmentText(query, true);
-  const seen = new Set<string>();
-  return result.split(' ').filter(t => {
-    if (seen.has(t)) return false;
-    seen.add(t);
-    return true;
-  }).join(' ');
-}
-
 function isPunctuation(s: string): boolean {
   return /^[\s，。、；：？！\u201C\u201D\u2018\u2019（）【】《》—…·,.;:?!'"()\[\]{}<>~`@#$%^&*+=|\\\-_\r\n\t]+$/.test(s);
 }
 
-function segmentText(text: string, forSearch = false): string {
+function segmentText(text: string): string {
   if (!text || !text.trim()) return '';
 
   const tokens: string[] = [];
@@ -109,7 +101,7 @@ function segmentText(text: string, forSearch = false): string {
   while ((match = PROTECTED_RE.exec(text)) !== null) {
     if (match.index > lastIndex) {
       const chinesePart = text.slice(lastIndex, match.index);
-      processChineseSegment(chinesePart, tokens, forSearch);
+      processChineseSegment(chinesePart, tokens);
     }
 
     tokens.push(match[0]);
@@ -118,17 +110,16 @@ function segmentText(text: string, forSearch = false): string {
 
   if (lastIndex < text.length) {
     const chinesePart = text.slice(lastIndex);
-    processChineseSegment(chinesePart, tokens, forSearch);
+    processChineseSegment(chinesePart, tokens);
   }
 
   return tokens.join(' ');
 }
 
-function processChineseSegment(text: string, tokens: string[], forSearch: boolean): void {
+function processChineseSegment(text: string, tokens: string[]): void {
   if (!text.trim()) return;
 
-  const cutFn = forSearch ? nodejieba.cutForSearch : nodejieba.cut;
-  const segments = cutFn(text);
+  const segments = nodejieba.cut(text);
 
   for (const seg of segments) {
     const trimmed = seg.trim();

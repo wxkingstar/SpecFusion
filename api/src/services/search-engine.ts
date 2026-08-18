@@ -1,6 +1,6 @@
 import type { SearchOptions, SearchResult, Document, ErrorCode } from '../types.js';
 import { getDb, findErrorCode, logSearch } from './doc-store.js';
-import { tokenizeForSearch } from './tokenizer.js';
+import { tokenize } from './tokenizer.js';
 
 // ---------------------------------------------------------------------------
 // Source name mapping
@@ -171,6 +171,27 @@ function computeScore(
 }
 
 // ---------------------------------------------------------------------------
+// Total count
+// ---------------------------------------------------------------------------
+
+/**
+ * 统计命中总数。
+ *
+ * 结果列表只取候选集的前 N 条，不能拿它的长度当总数。未指定 mode 时列表会按
+ * title + api_path 去重，计数必须用同一口径（COALESCE 对齐 JS 侧的
+ * `api_path ?? ''`），否则「共 N 条」和实际列表对不上。
+ */
+function countMatches(from: string, where: string, params: unknown[], deduped: boolean): number {
+  const sql = deduped
+    ? `SELECT COUNT(*) AS c FROM (
+         SELECT DISTINCT d.title, COALESCE(d.api_path, '') FROM ${from} WHERE ${where}
+       )`
+    : `SELECT COUNT(*) AS c FROM ${from} WHERE ${where}`;
+
+  return (getDb().prepare(sql).get(...params) as { c: number }).c;
+}
+
+// ---------------------------------------------------------------------------
 // Error code search
 // ---------------------------------------------------------------------------
 
@@ -215,6 +236,8 @@ export function search(
 
   const queryType = detectQueryType(trimmedQuery);
   let scoredRows: ScoredRow[] = [];
+  // 能用 SQL 精确算出总数的分支在这里赋值；留空则退回候选集长度
+  let exactTotal: number | undefined;
 
   // ----- 错误码搜索 -----
   if (queryType === 'error_code') {
@@ -254,33 +277,38 @@ export function search(
 
   // ----- API 路径搜索 -----
   else if (queryType === 'api_path') {
-    const params: unknown[] = [`%${trimmedQuery}%`];
+    const filterParams: unknown[] = [`%${trimmedQuery}%`];
     let whereExtra = '';
 
     if (source) {
-      whereExtra += ' AND source_id = ?';
-      params.push(source);
+      whereExtra += ' AND d.source_id = ?';
+      filterParams.push(source);
     }
     if (mode) {
-      whereExtra += ' AND dev_mode = ?';
-      params.push(mode);
+      whereExtra += ' AND d.dev_mode = ?';
+      filterParams.push(mode);
     }
-    params.push(limit);
 
     const rows = db
       .prepare(
-        `SELECT * FROM documents WHERE api_path LIKE ?${whereExtra} LIMIT ?`,
+        `SELECT d.* FROM documents d WHERE d.api_path LIKE ?${whereExtra} LIMIT ?`,
       )
-      .all(...params) as Document[];
+      .all(...filterParams, limit) as Document[];
 
     for (const doc of rows) {
       scoredRows.push({ doc, score: 50 });
     }
+
+    exactTotal = countMatches('documents d', `d.api_path LIKE ?${whereExtra}`, filterParams, !mode);
   }
 
   // ----- 关键词搜索 (FTS5) -----
   else {
-    const tokenized = tokenizeForSearch(trimmedQuery);
+    // 查询端必须与索引端（scrapers 写入 tokenized_* 时）用同一种切分：
+    // 下面拼出的 MATCH 表达式里空格是隐式 AND，一旦查询切出索引里不存在的
+    // 子词（如 cutForSearch 把「自定义」切成「自定 定义 自定义」），整个 AND
+    // 必然落空，返回 0 条。
+    const tokenized = tokenize(trimmedQuery);
     const tokens = tokenized.split(/\s+/).filter(Boolean);
 
     if (tokens.length === 0) {
@@ -306,10 +334,14 @@ export function search(
     try {
       const rows = db
         .prepare(
+          // 候选集必须按 bm25 排序再截断：不排序时 SQLite 按 rowid 返回，
+          // 命中上万条的查询只会拿到 rowid 最小的 200 条，最相关的文档
+          // 根本进不了后面的 computeScore 排序。bm25 越小越相关。
           `SELECT d.*, bm25(documents_fts) as fts_rank
            FROM documents_fts f
            JOIN documents d ON d.rowid = f.rowid
            WHERE documents_fts MATCH ?${whereExtra}
+           ORDER BY bm25(documents_fts)
            LIMIT 200`,
         )
         .all(matchExpr, ...extraParams) as (Document & { fts_rank: number })[];
@@ -319,8 +351,19 @@ export function search(
         const score = computeScore(doc as Document, trimmedQuery, tokens, fts_rank);
         scoredRows.push({ doc: doc as Document, fts_rank, score });
       }
+
+      exactTotal = countMatches(
+        'documents_fts f JOIN documents d ON d.rowid = f.rowid',
+        `documents_fts MATCH ?${whereExtra}`,
+        [matchExpr, ...extraParams],
+        !mode,
+      );
     } catch {
-      // FTS5 MATCH 语法错误时 fallback 到 LIKE 搜索
+      // FTS5 MATCH 语法错误时 fallback 到 LIKE 搜索。
+      // 这里的 content LIKE 全表扫描代价很高（真实库 6s+），不再额外算总数，
+      // 退回候选集长度。
+      scoredRows = [];
+      exactTotal = undefined;
       let whereExtra2 = '';
       const likeParams: unknown[] = [];
       for (const token of tokens) {
@@ -379,7 +422,7 @@ export function search(
     }
   }
 
-  const totalCount = scoredRows.length;
+  const totalCount = exactTotal ?? scoredRows.length;
   scoredRows = scoredRows.slice(0, limit);
 
   // ----- 构造 SearchResult -----

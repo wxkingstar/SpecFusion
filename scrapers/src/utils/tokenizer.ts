@@ -50,23 +50,6 @@ export function tokenize(text: string): string {
 }
 
 /**
- * 对搜索查询进行分词。
- * 使用 cutForSearch 进行更细粒度的切分，提高召回率。
- * 自动去重（cutForSearch 可能同时产生细粒度和粗粒度分词）。
- */
-export function tokenizeForSearch(query: string): string {
-  if (!initialized) initTokenizer();
-  const result = segmentText(query, true);
-  // cutForSearch 可能产生重复 token（如 "应用" "消息" "应用消息"），去重保留顺序
-  const seen = new Set<string>();
-  return result.split(' ').filter(t => {
-    if (seen.has(t)) return false;
-    seen.add(t);
-    return true;
-  }).join(' ');
-}
-
-/**
  * 判断一个字符串是否为纯标点/符号（不含有意义的文字）
  */
 function isPunctuation(s: string): boolean {
@@ -82,7 +65,7 @@ function isPunctuation(s: string): boolean {
  * 4. 过滤停用词和标点
  * 5. 用空格拼接返回
  */
-function segmentText(text: string, forSearch = false): string {
+function segmentText(text: string): string {
   if (!text || !text.trim()) return '';
 
   const tokens: string[] = [];
@@ -96,7 +79,7 @@ function segmentText(text: string, forSearch = false): string {
     // 处理 match 前面的中文文本
     if (match.index > lastIndex) {
       const chinesePart = text.slice(lastIndex, match.index);
-      processChineseSegment(chinesePart, tokens, forSearch);
+      processChineseSegment(chinesePart, tokens);
     }
 
     // 受保护的片段直接加入
@@ -107,7 +90,7 @@ function segmentText(text: string, forSearch = false): string {
   // 处理最后一段中文文本
   if (lastIndex < text.length) {
     const chinesePart = text.slice(lastIndex);
-    processChineseSegment(chinesePart, tokens, forSearch);
+    processChineseSegment(chinesePart, tokens);
   }
 
   return tokens.join(' ');
@@ -116,11 +99,10 @@ function segmentText(text: string, forSearch = false): string {
 /**
  * 对中文文本片段进行 jieba 分词，过滤停用词和标点后追加到 tokens 数组。
  */
-function processChineseSegment(text: string, tokens: string[], forSearch: boolean): void {
+function processChineseSegment(text: string, tokens: string[]): void {
   if (!text.trim()) return;
 
-  const cutFn = forSearch ? nodejieba.cutForSearch : nodejieba.cut;
-  const segments = cutFn(text);
+  const segments = nodejieba.cut(text);
 
   for (const seg of segments) {
     const trimmed = seg.trim();
