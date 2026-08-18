@@ -1,13 +1,15 @@
-import { chromium, type Browser, type Page } from 'playwright';
 import { load } from 'cheerio';
 import type { DocSource, DocEntry, DocContent } from '../types.js';
+import { delay } from '../utils/pace.js';
+import { createEgoPage, type EgoPage } from '../utils/ego-page.js';
+
+/** 浏览器页面类型 — 由 ego lite 提供，接口与 Playwright Page 的常用子集一致 */
+type Page = EgoPage;
 
 // ── 常量 ──────────────────────────────────────────────────────────────────────
 
 const DINGTALK_BASE = 'https://open.dingtalk.com';
 
-const USER_AGENT =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 /** 每次导航间隔（ms），避免触发风控 */
 const NAV_DELAY = 300;
@@ -61,7 +63,6 @@ interface RawTreeNode {
 
 // ── 工具函数 ──────────────────────────────────────────────────────────────────
 
-const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 // ── DingtalkSource ────────────────────────────────────────────────────────────
 
@@ -76,32 +77,22 @@ export class DingtalkSource implements DocSource {
   id = 'dingtalk';
   name = '钉钉';
 
-  private browser: Browser | null = null;
   private page: Page | null = null;
   private dialogsDismissed = false;
 
   // ── 浏览器生命周期 ──────────────────────────────────────────────────────
 
   private async ensureBrowser(): Promise<Page> {
-    if (this.page && this.browser?.isConnected()) {
-      return this.page;
+    if (!this.page) {
+      this.page = await createEgoPage();
     }
-
-    this.browser = await chromium.launch({
-      headless: true,
-      args: ['--no-sandbox'],
-    });
-
-    const context = await this.browser.newContext({ userAgent: USER_AGENT });
-    this.page = await context.newPage();
     return this.page;
   }
 
-  /** 关闭浏览器实例（同步结束后调用） */
+  /** 释放页面资源（同步结束后调用） */
   async close(): Promise<void> {
-    if (this.browser) {
-      await this.browser.close().catch(() => {});
-      this.browser = null;
+    if (this.page) {
+      await this.page.close().catch(() => {});
       this.page = null;
     }
   }

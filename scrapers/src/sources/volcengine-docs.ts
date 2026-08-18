@@ -2,6 +2,7 @@ import axios, { type AxiosInstance } from 'axios';
 import { tokenize } from '../utils/tokenizer.js';
 import { collapseBlankLines } from '../utils/html-to-md.js';
 import type { DocSource, DocEntry, DocContent } from '../types.js';
+import { delay } from '../utils/pace.js';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -82,7 +83,6 @@ type DocListResult = Record<string, DocListNode[]>;
 
 // ─── Utility helpers ────────────────────────────────────────────────────────
 
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /** 从 HTML 中提取 _ROUTER_DATA JSON */
 function extractRouterData(html: string): Record<string, unknown> | null {

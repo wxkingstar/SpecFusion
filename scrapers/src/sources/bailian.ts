@@ -4,6 +4,7 @@ import { decode } from 'html-entities';
 import { tokenize } from '../utils/tokenizer.js';
 import { collapseBlankLines, stripHtmlComments } from '../utils/html-to-md.js';
 import type { DocSource, DocEntry, DocContent } from '../types.js';
+import { delay } from '../utils/pace.js';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -59,7 +60,6 @@ interface MenuPathResponse {
 
 // ─── Utility helpers ────────────────────────────────────────────────────────
 
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function escapeCell(text: string): string {
   if (!text) return '';

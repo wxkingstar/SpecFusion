@@ -1,15 +1,18 @@
-import { chromium, type Browser, type Page, type Response } from 'playwright';
 import { tokenize } from '../utils/tokenizer.js';
 import { collapseBlankLines } from '../utils/html-to-md.js';
 import type { DocSource, DocEntry, DocContent } from '../types.js';
+import { createEgoPage, type EgoPage, type EgoResponse } from '../utils/ego-page.js';
+
+/** 浏览器页面 / 响应类型 — 由 ego lite 提供 */
+type Page = EgoPage;
+type Response = EgoResponse;
+import { delay } from '../utils/pace.js';
 
 // ── 常量 ──────────────────────────────────────────────────────────────────────
 
 const DEWU_BASE = 'https://open.dewu.com';
 const API_PAGE_URL = `${DEWU_BASE}/#/api`;
 
-const USER_AGENT =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 /** 每次导航间隔（ms） */
 const NAV_DELAY = 800;
@@ -91,7 +94,6 @@ interface CatalogItem {
 
 // ── 工具函数 ──────────────────────────────────────────────────────────────────
 
-const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 function escapeCell(text: string): string {
   if (!text) return '';
@@ -124,31 +126,23 @@ export class DewuSource implements DocSource {
   id = 'dewu';
   name = '得物开放平台';
 
-  private browser: Browser | null = null;
   private page: Page | null = null;
 
   // ── 浏览器生命周期 ──────────────────────────────────────────────────────
 
   private async ensureBrowser(): Promise<Page> {
-    if (this.page && this.browser?.isConnected()) {
-      return this.page;
+    if (!this.page) {
+      this.page = await createEgoPage();
+      // 桥接侧只缓存 XHR/Fetch；URL 筛选交给 waitForDocResponse 的 handler
+      await this.page.setCapturePatterns([]);
     }
-
-    this.browser = await chromium.launch({
-      headless: true,
-      args: ['--no-sandbox'],
-    });
-
-    const context = await this.browser.newContext({ userAgent: USER_AGENT });
-    this.page = await context.newPage();
     return this.page;
   }
 
-  /** 关闭浏览器实例（同步结束后调用） */
+  /** 释放页面资源（同步结束后调用） */
   async close(): Promise<void> {
-    if (this.browser) {
-      await this.browser.close().catch(() => {});
-      this.browser = null;
+    if (this.page) {
+      await this.page.close().catch(() => {});
       this.page = null;
     }
   }

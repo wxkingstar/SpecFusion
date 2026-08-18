@@ -2,6 +2,7 @@ import axios, { type AxiosInstance } from 'axios';
 import { load, type CheerioAPI } from 'cheerio';
 import { tokenize } from '../utils/tokenizer.js';
 import type { DocSource, DocEntry, DocContent } from '../types.js';
+import { delay } from '../utils/pace.js';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -20,7 +21,6 @@ const DOC_PATH_PREFIX = '/doc/store/shop/';
 
 // ─── Utility helpers ────────────────────────────────────────────────────────
 
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function randomDelay(base: number, jitter: number): Promise<void> {
   const ms = base + Math.floor(Math.random() * jitter);

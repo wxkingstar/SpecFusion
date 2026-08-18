@@ -5,6 +5,7 @@ import axios, { type AxiosInstance } from 'axios';
 import { tokenize } from '../utils/tokenizer.js';
 import { parseCookieString, toCookieHeader, type CookieEntry } from '../utils/cookies.js';
 import type { DocSource, DocEntry, DocContent } from '../types.js';
+import { delay } from '../utils/pace.js';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -124,7 +125,6 @@ interface PddPermissionPkg {
 
 // ─── Utility helpers ────────────────────────────────────────────────────────
 
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function escapeCell(text: string): string {
   if (!text) return '';

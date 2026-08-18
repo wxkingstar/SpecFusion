@@ -1,8 +1,13 @@
-import { chromium, type Browser, type Page, type Response } from 'playwright';
 import { load } from 'cheerio';
 import { tokenize } from '../utils/tokenizer.js';
 import { collapseBlankLines, stripHtmlComments } from '../utils/html-to-md.js';
 import type { DocSource, DocEntry, DocContent } from '../types.js';
+import { delay } from '../utils/pace.js';
+import { createEgoPage, type EgoPage, type EgoResponse } from '../utils/ego-page.js';
+
+/** 浏览器页面 / 响应类型 — 由 ego lite 提供 */
+type Page = EgoPage;
+type Response = EgoResponse;
 
 // ── 常量 ──────────────────────────────────────────────────────────────────────
 
@@ -75,7 +80,6 @@ interface ApiOverviewItem {
 
 // ── 工具函数 ──────────────────────────────────────────────────────────────────
 
-const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 function escapeCell(text: string): string {
   if (!text) return '';
@@ -100,31 +104,23 @@ export class JdSource implements DocSource {
   id = 'jd';
   name = '京东商家开放平台';
 
-  private browser: Browser | null = null;
   private page: Page | null = null;
 
   // ── 浏览器生命周期 ──────────────────────────────────────────────────────
 
   private async ensureBrowser(): Promise<Page> {
-    if (this.page && this.browser?.isConnected()) {
-      return this.page;
+    if (!this.page) {
+      this.page = await createEgoPage();
+      // 桥接侧只缓存 XHR/Fetch；URL 筛选交给各 waitForXxx 的 handler
+      await this.page.setCapturePatterns([]);
     }
-
-    this.browser = await chromium.launch({
-      headless: true,
-      args: ['--no-sandbox'],
-    });
-
-    const context = await this.browser.newContext({ userAgent: USER_AGENT });
-    this.page = await context.newPage();
     return this.page;
   }
 
-  /** 关闭浏览器实例（同步结束后调用） */
+  /** 释放页面资源（同步结束后调用） */
   async close(): Promise<void> {
-    if (this.browser) {
-      await this.browser.close().catch(() => {});
-      this.browser = null;
+    if (this.page) {
+      await this.page.close().catch(() => {});
       this.page = null;
     }
   }

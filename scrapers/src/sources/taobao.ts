@@ -2,6 +2,7 @@ import axios, { type AxiosInstance } from 'axios';
 import { CookieJar } from 'tough-cookie';
 import { tokenize } from '../utils/tokenizer.js';
 import type { DocSource, DocEntry, DocContent } from '../types.js';
+import { delay } from '../utils/pace.js';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -103,7 +104,6 @@ interface TaobaoDocData {
 
 // ─── Utility helpers ────────────────────────────────────────────────────────
 
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /** Random delay with jitter */
 function randomDelay(base: number, jitter: number): Promise<void> {

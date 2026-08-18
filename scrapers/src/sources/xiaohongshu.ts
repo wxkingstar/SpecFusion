@@ -1,13 +1,16 @@
-import { chromium, type Browser, type Page, type Response } from 'playwright';
 import type { DocSource, DocEntry, DocContent } from '../types.js';
+import { delay } from '../utils/pace.js';
+import { createEgoPage, type EgoPage, type EgoResponse } from '../utils/ego-page.js';
+
+/** 浏览器页面 / 响应类型 — 由 ego lite 提供 */
+type Page = EgoPage;
+type Response = EgoResponse;
 
 // ── 常量 ──────────────────────────────────────────────────────────────────────
 
 const XHS_BASE = 'https://open.xiaohongshu.com';
 const DOC_BASE = `${XHS_BASE}/document/api`;
 
-const USER_AGENT =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 /** 页面导航完成后的额外缓冲（ms），给次要响应收尾 */
 const SETTLE_DELAY = 1200;
@@ -90,7 +93,6 @@ interface ParamRow {
 
 // ── 工具 ──────────────────────────────────────────────────────────────────────
 
-const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /**
  * 解析小红书目录类接口：外层 `{ data: "<字符串化 JSON>", error_code, success }`，
@@ -292,23 +294,23 @@ export class XiaohongshuSource implements DocSource {
   id = 'xiaohongshu';
   name = '小红书';
 
-  private browser: Browser | null = null;
   private page: Page | null = null;
   /** 按 `${gatewayId}-${gatewayVersionId}` 缓存公共参数响应 */
   private commonParamsByGateway = new Map<string, ApiInfo>();
 
   private async ensureBrowser(): Promise<Page> {
-    if (this.page && this.browser?.isConnected()) return this.page;
-    this.browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
-    const ctx = await this.browser.newContext({ userAgent: USER_AGENT });
-    this.page = await ctx.newPage();
+    if (!this.page) {
+      this.page = await createEgoPage();
+      // 桥接侧只缓存 XHR/Fetch 响应；这里不限定 URL 片段，
+      // 具体筛选交给 loadAndCapture 里的 match 函数
+      await this.page.setCapturePatterns([]);
+    }
     return this.page;
   }
 
   async close(): Promise<void> {
-    if (this.browser) {
-      await this.browser.close().catch(() => {});
-      this.browser = null;
+    if (this.page) {
+      await this.page.close().catch(() => {});
       this.page = null;
     }
   }

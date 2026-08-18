@@ -1,5 +1,3 @@
-import axios, { type AxiosInstance } from 'axios';
-import { wrapper } from 'axios-cookiejar-support';
 import { CookieJar } from 'tough-cookie';
 import fs from 'fs-extra';
 import path from 'path';
@@ -9,6 +7,8 @@ import sanitize from 'sanitize-filename';
 import { decode } from 'html-entities';
 import { tokenize } from '../utils/tokenizer.js';
 import type { DocSource, DocEntry, DocContent } from '../types.js';
+import { delay } from '../utils/pace.js';
+import { createEgoHttpClient, type EgoHttpClient } from '../utils/ego-page.js';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -33,7 +33,6 @@ const ERROR_CODE_REGEX = /\|\s*(\d{3,6})\s*\|\s*([^|]*)\|\s*([^|]*)\|/g;
 
 // ─── Utility helpers ────────────────────────────────────────────────────────
 
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function parseDateParts(year: string, month: string, day: string): Date | null {
   const y = Number(year);
@@ -370,31 +369,34 @@ export class WecomSource implements DocSource {
   name = '企业微信';
 
   private jar: CookieJar;
-  private client: AxiosInstance;
+  private client!: EgoHttpClient;
+  private clientReady: Promise<void> | null = null;
   private requestCount = 0;
   private captchaLock: Promise<boolean> | null = null;
   private captchaFailed = false;
 
   constructor() {
     this.jar = new CookieJar();
-    this.client = wrapper(
-      axios.create({
-        baseURL: BASE_URL,
-        headers: {
-          'User-Agent': USER_AGENT,
-          Accept: 'application/json, text/plain, */*',
-          'Accept-Language': 'zh-CN,zh;q=0.9',
-        },
-        timeout: 20000,
-        withCredentials: true,
-      }),
-    );
-    (this.client.defaults as any).jar = this.jar;
-    (this.client.defaults as any).withCredentials = true;
 
     // Load cookies from env and file
     this.importCookiesFromEnv(process.env.WECOM_COOKIES || '');
     this.importCookiesFromFile(COOKIE_FILE);
+  }
+
+  /**
+   * 惰性创建 ego lite 传输层。
+   *
+   * 请求全部由 ego lite 的真实浏览器页面发出，自带完整 cookie 与正确的
+   * Referer，比 axios + 本地 cookie 文件更不容易触发 500003 人机验证。
+   */
+  private async ensureClient(): Promise<void> {
+    if (!this.clientReady) {
+      this.clientReady = (async () => {
+        this.client = await createEgoHttpClient(BASE_URL);
+        await this.client.warmup(BASE_REFERER);
+      })();
+    }
+    await this.clientReady;
   }
 
   // ─── Cookie management ──────────────────────────────────────────────────
@@ -450,6 +452,7 @@ export class WecomSource implements DocSource {
    */
   async checkCookieHealth(): Promise<boolean> {
     try {
+      await this.ensureClient();
       const testDocId = '90664'; // 已知存在的企业微信文档
       const headers = {
         Referer: `${BASE_URL}/document/path/${testDocId}`,
@@ -474,159 +477,40 @@ export class WecomSource implements DocSource {
   /**
    * 打开浏览器让用户登录，登录成功后自动保存 cookies 并导入到请求客户端
    */
+  /**
+   * 触发人机验证后请用户在 ego lite 窗口里完成验证。
+   *
+   * 迁移到 ego lite 后不再自己 launch/connect Chrome：抓取本来就跑在
+   * ego lite 的真实浏览器里，验证码弹在同一个页面上，用户处理完脚本
+   * 轮询到接口恢复正常就继续。
+   */
   async openBrowserForLogin(
     targetUrl = `${BASE_URL}/document/path/90664`,
   ): Promise<boolean> {
-    console.log('\n[wecom] 正在打开浏览器进行登录...');
-
-    let chromium: any;
-    try {
-      const pw = await import('playwright');
-      chromium = pw.chromium;
-    } catch {
-      console.warn(
-        '[wecom] Playwright 未安装，无法自动打开浏览器登录。\n' +
-          '  请手动更新 Cookie：\n' +
-          '  1. 在浏览器中打开 https://developer.work.weixin.qq.com/document/path/90664\n' +
-          '  2. 登录后通过开发者工具获取 Cookie\n' +
-          '  3. 保存到 .wecom_cookies.json 或设置环境变量 WECOM_COOKIES',
-      );
-      return false;
-    }
-
-    console.log('[wecom] 请在浏览器中完成登录/验证，脚本会自动检测并继续。\n');
-
-    // 通过 CDP 连接独立 Chrome（而不是 Playwright launchPersistentContext），
-    // 这样 chrome-devtools MCP 可以同时接入同一个浏览器协助用户完成人机验证。
-    const CDP_URL = process.env.WECOM_CDP_URL || 'http://localhost:9222';
-    const userDataDir = path.resolve('.wecom_browser_profile');
-
-    const tryConnect = async () => {
-      try {
-        return await chromium.connectOverCDP(CDP_URL);
-      } catch {
-        return null;
-      }
-    };
-
-    let browser = await tryConnect();
-    if (!browser) {
-      console.log(`[wecom] ${CDP_URL} 未找到已运行的 Chrome，尝试启动一个独立实例...`);
-      try {
-        const { spawn } = await import('child_process');
-        const chromePath =
-          process.env.WECOM_CHROME_PATH ||
-          '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-        const port = new URL(CDP_URL).port || '9222';
-        const child = spawn(
-          chromePath,
-          [
-            `--remote-debugging-port=${port}`,
-            `--user-data-dir=${userDataDir}`,
-            '--no-first-run',
-            '--no-default-browser-check',
-            '--disable-blink-features=AutomationControlled',
-            '--start-maximized',
-            'about:blank',
-          ],
-          { detached: true, stdio: 'ignore' },
-        );
-        child.unref();
-      } catch (err: any) {
-        console.warn(
-          `[wecom] 启动 Chrome 失败: ${err.message}\n` +
-            '  设置 WECOM_CHROME_PATH 指向系统 Chrome 可执行路径，或先手动启动：\n' +
-            `  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9222 --user-data-dir=${userDataDir}`,
-        );
-        return false;
-      }
-
-      // 等 CDP 端口就绪（最多 15s）
-      for (let i = 0; i < 30; i++) {
-        await new Promise((r) => setTimeout(r, 500));
-        browser = await tryConnect();
-        if (browser) break;
-      }
-      if (!browser) {
-        console.warn('[wecom] Chrome 已启动但 CDP 端口仍无法连接，放弃');
-        return false;
-      }
-    }
-
-    const context =
-      browser.contexts()[0] || (await (browser as any).newContext({ userAgent: USER_AGENT }));
-    const page = context.pages()[0] || (await context.newPage());
+    console.log("\n[wecom] 请在 ego lite 窗口中完成人机验证，脚本会自动检测并继续。\n");
 
     try {
-      await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-
-      console.log('[wecom] 等待登录/验证完成...');
-
-      // waitForFunction runs in browser context; use string to avoid TS DOM type errors
-      await page.waitForFunction(
-        `(() => {
-          const docContent = document.querySelector('.doc-content, .markdown-body, [class*="doc-"]');
-          // 只检测「可见的」验证组件；页头常驻的 login 按钮类名会永久存在，不能作为未通过的依据
-          const blockers = document.querySelectorAll('[class*="captcha"], [class*="verify"], iframe[src*="captcha"]');
-          const visibleBlocker = Array.from(blockers).some((el) => {
-            const rect = el.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0;
-          });
-          return docContent && !visibleBlocker;
-        })()`,
-        { timeout: 300000 }, // 5 分钟超时
-      );
-
-      console.log('[wecom] 检测到登录/验证成功！');
-
-      const cookies = await context.cookies();
-      const relevantCookies = cookies.filter(
-        (c: any) =>
-          c.domain.includes('work.weixin.qq.com') || c.domain.includes('weixin.qq.com'),
-      );
-
-      if (relevantCookies.length > 0) {
-        await fs.writeJson(COOKIE_FILE, relevantCookies, { spaces: 2 });
-        console.log(
-          `[wecom] 已保存 ${relevantCookies.length} 个 cookies 到 ${COOKIE_FILE}`,
-        );
-
-        // 导入 cookies 到 axios jar
-        for (const cookie of relevantCookies) {
-          const domain = cookie.domain.startsWith('.')
-            ? cookie.domain
-            : `.${cookie.domain}`;
-          try {
-            this.jar.setCookieSync(
-              `${cookie.name}=${cookie.value}; Domain=${domain}; Path=${cookie.path || '/'}`,
-              BASE_URL,
-            );
-          } catch {
-            // 忽略 cookie 设置错误
-          }
-        }
-
-        console.log('[wecom] 已将 cookies 导入到请求客户端\n');
-        return true;
-      } else {
-        console.warn('[wecom] 未获取到有效的 cookies');
-        return false;
-      }
+      await this.ensureClient();
+      await this.client.warmup(targetUrl);
     } catch (error: any) {
-      if (error.name === 'TimeoutError') {
-        console.error('[wecom] 登录超时（5分钟），请重试');
-      } else {
-        console.error('[wecom] 登录过程出错:', error.message);
-      }
+      console.warn("[wecom] 无法导航到验证页面:", error.message);
       return false;
-    } finally {
-      // 只断开 CDP 连接，不关闭 Chrome 进程 —— 让 chrome-devtools MCP 可以继续使用同一个浏览器
-      try {
-        await (browser as any).close();
-      } catch {
-        /* 忽略断开错误 */
-      }
     }
+
+    // 最多等 5 分钟，每 10 秒探一次接口是否恢复
+    const deadline = Date.now() + 5 * 60_000;
+    while (Date.now() < deadline) {
+      await delay(10_000);
+      if (await this.checkCookieHealth()) {
+        console.log("[wecom] ✓ 验证已通过\n");
+        return true;
+      }
+      const left = Math.ceil((deadline - Date.now()) / 1000);
+      console.log(`[wecom] 仍未通过验证，继续等待（剩余 ${left}s）...`);
+    }
+
+    console.error("[wecom] 等待验证超时（5 分钟）");
+    return false;
   }
 
   // ─── Captcha handling ───────────────────────────────────────────────────
@@ -682,6 +566,7 @@ export class WecomSource implements DocSource {
   // ─── API calls ──────────────────────────────────────────────────────────
 
   private async fetchCategories(): Promise<CategoryNode[]> {
+    await this.ensureClient();
     const headers = {
       Referer: BASE_REFERER,
       'Content-Type': 'application/json',
@@ -709,6 +594,7 @@ export class WecomSource implements DocSource {
     doc_id?: string;
     pageHtml?: string;
   }> {
+    await this.ensureClient();
     const headers = {
       Referer: `${BASE_URL}/document/path/${docId}`,
       'Content-Type': 'application/x-www-form-urlencoded',

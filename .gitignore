@@ -16,3 +16,4 @@ coverage/
 api/data/
 /specfusion-promo.mp4
 .gstack/
+.sync-logs/

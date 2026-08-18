@@ -24,7 +24,7 @@
 
 - **不离开终端** — 写代码时直接问，Claude 帮你查文档、给出接口参数和示例
 - **中文搜索准确** — jieba 分词 + FTS5 全文索引，`发送应用消息`、`access_token`、`40001` 都能搜到
-- **65,000+ 篇文档** — 企业微信 ~2,740 篇 + 飞书 ~4,260 篇 + 钉钉 ~2,750 篇 + 淘宝 ~6,940 篇 + 小红书 ~100 篇 + 抖音电商 ~1,390 篇 + 微信小程序 ~470 篇 + 微信小店 ~490 篇 + 拼多多 ~280 篇 + 有赞 ~1,240 篇 + 微信支付 ~550 篇 + 支付宝 ~600 篇 + 京东 ~6,290 篇 + SHEIN ~240 篇 + 得物 ~270 篇 + 火山引擎ECS ~121 篇 + 火山引擎 ~34,000 篇 + 阿里云百炼 ~1,290 篇 + 泛微 ~500 篇 + 北森 ~1,080 篇，接口参数、错误码、事件订阅全覆盖
+- **68,000+ 篇文档** — 企业微信 ~2,790 篇 + 飞书 ~4,260 篇 + 钉钉 ~2,760 篇 + 淘宝 ~6,960 篇 + 小红书 ~100 篇 + 抖音电商 ~1,400 篇 + 微信小程序 ~470 篇 + 微信小店 ~490 篇 + 拼多多 ~290 篇 + 有赞 ~1,250 篇 + 微信支付 ~550 篇 + 支付宝 ~600 篇 + 京东 ~6,280 篇 + SHEIN ~250 篇 + 得物 ~270 篇 + 火山引擎ECS ~121 篇 + 火山引擎 ~36,660 篇 + 阿里云百炼 ~1,670 篇 + 泛微 ~560 篇 + 北森 ~1,090 篇，接口参数、错误码、事件订阅全覆盖
 - **零配置** — 云端服务已部署好，安装 Skill 后即可使用，无需自建后端
 
 ## 安装
@@ -145,26 +145,26 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/wxkingstar/SpecFusion/
 
 | 平台 | 文档数量 | 覆盖范围 |
 |------|---------|---------|
-| 企业微信 | ~2,740 | 服务端 API、客户端 API、应用开发 |
+| 企业微信 | ~2,790 | 服务端 API、客户端 API、应用开发 |
 | 飞书 | ~4,260 | 服务端 API、事件订阅、小程序 |
-| 钉钉 | ~2,750 | 企业内部应用、服务端 API、客户端 JSAPI |
-| 淘宝开放平台 | ~6,940 | 商品、交易、物流、店铺、用户等 API |
+| 钉钉 | ~2,760 | 企业内部应用、服务端 API、客户端 JSAPI |
+| 淘宝开放平台 | ~6,960 | 商品、交易、物流、店铺、用户等 API |
 | 小红书 | ~100 | 电商开放平台 API（订单、商品、售后、物流等） |
-| 抖音电商开放平台 | ~1,390 | 商品、订单、物流、售后、精选联盟、即时零售等 API |
+| 抖音电商开放平台 | ~1,400 | 商品、订单、物流、售后、精选联盟、即时零售等 API |
 | 微信小程序 | ~470 | 服务端 API（登录、用户信息、小程序码、客服、数据分析、安全、物流等） |
 | 微信小店 | ~490 | 商品管理、订单管理、售后管理、物流发货、资金结算、营销优惠券等 API |
-| 拼多多开放平台 | ~280 | 订单、商品、物流、售后、营销、店铺、虚拟类目、多多进宝等 API |
-| 有赞开放平台 | ~1,240 | 用户、会员、商品、交易、物流、营销、店铺、分销、财务、美业等 API |
+| 拼多多开放平台 | ~290 | 订单、商品、物流、售后、营销、店铺、虚拟类目、多多进宝等 API |
+| 有赞开放平台 | ~1,250 | 用户、会员、商品、交易、物流、营销、店铺、分销、财务、美业等 API |
 | 微信支付 | ~550 | JSAPI/APP/H5/Native/小程序支付、退款、分账、合单支付、代金券、商家转账等 API |
 | 支付宝开放平台 | ~600 | 当面付、APP支付、手机网站支付、电脑网站支付、资金、会员、营销、安全等 API |
-| 京东商家开放平台 | ~6,290 | 商品、订单、物流、售后、促销、店铺、数据、发票、供应商等 API |
-| SHEIN开放平台 | ~240 | 密钥授权、商品、订单、退货退款、采购单、库存、财务、物流、Webhook 等 API |
+| 京东商家开放平台 | ~6,280 | 商品、订单、物流、售后、促销、店铺、数据、发票、供应商等 API |
+| SHEIN开放平台 | ~250 | 密钥授权、商品、订单、退货退款、采购单、库存、财务、物流、Webhook 等 API |
 | 得物开放平台 | ~270 | 商品、订单、售后、出价、入仓、开票、文件、对账单等 API |
 | 火山引擎云服务器 | ~121 | 实例、镜像、密钥对、安全组、地域、部署集、专有宿主机、云助手等 API |
-| 火山引擎 | ~34,000 | 179 个云产品文档：计算、AI、网络、存储、数据库、容器、安全、CDN、视频云、大数据等 |
-| 阿里云百炼 | ~1,290 | 千问大模型、DashScope SDK、OpenAI兼容接口、语音合成/识别、图像/视频生成、应用开发等 |
-| 泛微 e-teams 开放平台 | ~500 | 认证免登、组织架构、人员、工作流程、业务表单、任务、考勤、CRM、订单、文档、日程等 API |
-| 北森 iTalent 开放平台 | ~1,080 | 招聘、组织员工、假勤、薪酬、绩效、目标、学习云、干部管理、360评估、PaaS 平台等 API |
+| 火山引擎 | ~36,660 | 179 个云产品文档：计算、AI、网络、存储、数据库、容器、安全、CDN、视频云、大数据等 |
+| 阿里云百炼 | ~1,670 | 千问大模型、DashScope SDK、OpenAI兼容接口、语音合成/识别、图像/视频生成、应用开发等 |
+| 泛微 e-teams 开放平台 | ~560 | 认证免登、组织架构、人员、工作流程、业务表单、任务、考勤、CRM、订单、文档、日程等 API |
+| 北森 iTalent 开放平台 | ~1,090 | 招聘、组织员工、假勤、薪酬、绩效、目标、学习云、干部管理、360评估、PaaS 平台等 API |
 
 ## 仅在当前项目安装
 
@@ -240,20 +240,20 @@ sed -i 's|https://specfusion.inagora.org/api|http://your-host:3456/api|g' \
 ```bash
 npm install
 npm run sync -- --source feishu    # 同步飞书文档
-npm run sync -- --source wecom     # 同步企业微信文档
-npm run sync -- --source dingtalk  # 同步钉钉文档（需要 playwright）
+npm run sync -- --source wecom     # 同步企业微信文档（需要 ego lite 桥接）
+npm run sync -- --source dingtalk  # 同步钉钉文档（需要 ego lite 桥接）
 npm run sync -- --source taobao    # 同步淘宝开放平台文档
-npm run sync -- --source xiaohongshu  # 同步小红书文档
+npm run sync -- --source xiaohongshu  # 同步小红书文档（需要 ego lite 桥接）
 npm run sync -- --source douyin    # 同步抖音电商开放平台文档
 npm run sync -- --source wechat-miniprogram  # 同步微信小程序文档
 npm run sync -- --source wechat-shop  # 同步微信小店文档
-npm run sync -- --source pinduoduo   # 同步拼多多开放平台文档（需先导出 JSON）
+npm run sync -- --source pinduoduo   # 同步拼多多开放平台文档（需先跑 scripts/pdd-refresh.sh）
 npm run sync -- --source youzan      # 同步有赞开放平台文档
 npm run sync -- --source wechat-pay  # 同步微信支付文档
 npm run sync -- --source alipay      # 同步支付宝开放平台文档
-npm run sync -- --source jd          # 同步京东商家开放平台文档
+npm run sync -- --source jd          # 同步京东商家开放平台文档（需要 ego lite 桥接）
 npm run sync -- --source shein       # 同步SHEIN开放平台文档
-npm run sync -- --source dewu        # 同步得物开放平台文档（需要 playwright）
+npm run sync -- --source dewu        # 同步得物开放平台文档（需要 ego lite 桥接）
 npm run sync -- --source volcengine-ecs  # 同步火山引擎云服务器文档
 npm run sync -- --source volcengine  # 同步火山引擎文档中心
 npm run sync -- --source bailian     # 同步阿里云百炼文档
@@ -300,7 +300,7 @@ Base URL: `http://localhost:3456/api`（自部署）
 
 - **API**: Node.js + Fastify + better-sqlite3 + FTS5
 - **中文分词**: nodejieba
-- **Scraper**: cheerio + playwright
+- **Scraper**: cheerio + [ego lite](https://lite.ego.app/)（浏览器抓取）
 - **构建**: tsup + tsx
 
 ## 贡献

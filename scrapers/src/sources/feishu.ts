@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance } from 'axios';
 import PQueue from 'p-queue';
 import type { DocSource, DocEntry, DocContent } from '../types.js';
+import { delay } from '../utils/pace.js';
 
 // ── 常量 ──────────────────────────────────────────────────────────────
 
@@ -55,7 +56,6 @@ interface DocumentResponse {
 
 // ── 工具函数 ──────────────────────────────────────────────────────────
 
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function timestampToDate(value: number): Date | null {
   if (!Number.isFinite(value) || value <= 0) return null;

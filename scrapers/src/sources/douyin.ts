@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance } from 'axios';
 import { tokenize } from '../utils/tokenizer.js';
 import type { DocSource, DocEntry, DocContent } from '../types.js';
+import { delay } from '../utils/pace.js';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -131,7 +132,6 @@ interface DouyinContentJson {
 
 // ─── Utility helpers ────────────────────────────────────────────────────────
 
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function escapeCell(text: string): string {
   if (!text) return '';
