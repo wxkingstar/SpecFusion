@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="0.55" stop-color="#0a1b33"/>
+      <stop offset="1" stop-color="#10294b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#31d7ff" stop-opacity=".38"/>
+      <stop offset="1" stop-color="#31d7ff" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse">
+      <path d="M42 0H0V42" fill="none" stroke="#79a6d2" stroke-opacity=".09"/>
+    </pattern>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="28" flood-color="#000" flood-opacity=".35"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <circle cx="1020" cy="90" r="360" fill="url(#glow)"/>
+  <circle cx="160" cy="620" r="300" fill="url(#glow)" opacity=".45"/>
+  <g filter="url(#shadow)">
+    <rect x="72" y="62" width="1056" height="506" rx="30" fill="#0b1729" fill-opacity=".82" stroke="#55c9ec" stroke-opacity=".28"/>
+  </g>
+  <g font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif">
+    <rect x="112" y="102" width="220" height="44" rx="22" fill="#0d334b" stroke="#3ce1ff" stroke-opacity=".55"/>
+    <text x="222" y="131" text-anchor="middle" font-size="21" font-weight="700" fill="#7eeaff">DEEPSEEK HARNESS</text>
+    <text x="112" y="224" font-size="68" font-weight="800" fill="#f4fbff">给 Agent 装上</text>
+    <text x="112" y="312" font-size="68" font-weight="800" fill="#f4fbff">中国 API 文档库</text>
+    <text x="112" y="367" font-size="27" fill="#a8c2da">SpecFusion 原生插件 · 直接搜索接口、路径、参数与错误码</text>
+    <g transform="translate(112 420)">
+      <rect width="258" height="92" rx="18" fill="#10273e" stroke="#2d739c"/>
+      <text x="28" y="39" font-size="19" fill="#9db7cd">官方 API 文档</text>
+      <text x="28" y="73" font-size="33" font-weight="800" fill="#66e5ff">65,602 篇</text>
+      <rect x="278" width="204" height="92" rx="18" fill="#10273e" stroke="#2d739c"/>
+      <text x="306" y="39" font-size="19" fill="#9db7cd">开放平台</text>
+      <text x="306" y="73" font-size="33" font-weight="800" fill="#66e5ff">20 个</text>
+      <rect x="502" width="222" height="92" rx="18" fill="#10273e" stroke="#2d739c"/>
+      <text x="530" y="39" font-size="19" fill="#9db7cd">原生能力</text>
+      <text x="530" y="73" font-size="31" font-weight="800" fill="#66e5ff">5 个 Tools</text>
+    </g>
+    <g transform="translate(886 160)">
+      <circle cx="104" cy="104" r="104" fill="#0c263b" stroke="#4ce4ff" stroke-width="2"/>
+      <circle cx="104" cy="104" r="78" fill="none" stroke="#4ce4ff" stroke-opacity=".22" stroke-width="18"/>
+      <path d="M54 114c22-55 77-80 117-42 18 18 20 47 4 69-18 25-48 35-78 23-19-8-33-26-33-47 0-7 2-15 5-22 7 30 31 46 58 41 27-5 44-31 37-56-8-29-43-41-69-24-18 12-27 34-22 55-8-3-13-1-19 3z" fill="#67e7ff"/>
+      <circle cx="163" cy="80" r="7" fill="#07111f"/>
+      <text x="104" y="257" text-anchor="middle" font-size="31" font-weight="800" fill="#dffaff">SpecFusion</text>
+      <text x="104" y="289" text-anchor="middle" font-size="17" fill="#8fb2cd">Everything is a Plugin</text>
+    </g>
+  </g>
+</svg>
