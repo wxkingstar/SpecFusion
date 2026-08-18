@@ -74,10 +74,15 @@ test("多词查询各 token 之间为 AND", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 总数：「共 N 条」必须是真实总数，不能被候选集上限或 limit 截断
+// 总数：候选集封顶 200 条，「共 N 条」是下限而非真实总数
+//
+// 精确计数和 ORDER BY bm25 都要枚举全部命中行。生产 Pod 只有 512Mi 内存、
+// 数据库 1.9GB 放在 PVC 网络存储上，page cache 装不下工作集，命中 3 万条的
+// 查询实测 12s，而 better-sqlite3 是同步的，会把事件循环和健康探针一起堵死。
+// 这里把「封顶」这个已知取舍钉死，避免有人不了解生产约束又把它加回来。
 // ---------------------------------------------------------------------------
 
-test('关键词搜索的总数不被候选集上限（200）截断', () => {
+test('命中超过候选集上限时，总数封顶在 200', () => {
   for (let i = 0; i < 250; i++) {
     addDoc(`/bulk/${i}`, `zzitem${i}`, `zzbulktoken content ${i}`);
   }
@@ -85,10 +90,10 @@ test('关键词搜索的总数不被候选集上限（200）截断', () => {
   const { results, totalCount } = search({ query: 'zzbulktoken', limit: 5 });
 
   assert.equal(results.length, 5);
-  assert.equal(totalCount, 250);
+  assert.equal(totalCount, 200);
 });
 
-test('关键词搜索的总数按 title+api_path 去重后统计', () => {
+test('总数按 title+api_path 去重后统计', () => {
   for (let i = 0; i < 3; i++) {
     upsertDocument({
       source_id: 'test',
@@ -101,12 +106,10 @@ test('关键词搜索的总数按 title+api_path 去重后统计', () => {
     });
   }
 
-  const { totalCount } = search({ query: 'zzduptoken', limit: 5 });
-
-  assert.equal(totalCount, 1);
+  assert.equal(search({ query: 'zzduptoken', limit: 5 }).totalCount, 1);
 });
 
-test('指定 mode 时不去重，总数为原始命中数', () => {
+test('指定 mode 时按该 mode 过滤', () => {
   for (const devMode of ['server', 'client', 'web']) {
     upsertDocument({
       source_id: 'test',
@@ -122,42 +125,4 @@ test('指定 mode 时不去重，总数为原始命中数', () => {
 
   assert.equal(search({ query: 'zzmodetoken', limit: 5 }).totalCount, 1);
   assert.equal(search({ query: 'zzmodetoken', mode: 'server', limit: 5 }).totalCount, 1);
-});
-
-test('API 路径搜索的总数不被 limit 截断', () => {
-  for (let i = 0; i < 10; i++) {
-    upsertDocument({
-      source_id: 'test',
-      path: `/apipath/${i}`,
-      title: `zzpath${i}`,
-      api_path: `/cgi-bin/zzprobe/${i}`,
-      content: 'api path fixture',
-      tokenized_title: tokenize(`zzpath${i}`),
-      tokenized_content: tokenize('api path fixture'),
-    });
-  }
-
-  const { results, totalCount } = search({ query: '/cgi-bin/zzprobe', limit: 3 });
-
-  assert.equal(results.length, 3);
-  assert.equal(totalCount, 10);
-});
-
-// ---------------------------------------------------------------------------
-// 排序：候选集必须是全局最相关的那一批，而不是 rowid 最小的那一批
-// ---------------------------------------------------------------------------
-
-test('最相关的文档即使排在候选集上限之外也能进入结果', () => {
-  // 先塞 250 篇弱相关文档（命中词被大量无关内容稀释），占满候选集上限
-  for (let i = 0; i < 250; i++) {
-    const filler = `alpha bravo charlie delta echo foxtrot golf hotel india juliet ${i}`;
-    addDoc(`/rank/filler/${i}`, `zzfiller${i}`, `${filler} zzranktoken ${filler}`);
-  }
-
-  // 强相关文档最后插入，rowid 排在 250 篇之后
-  addDoc('/rank/target', 'zzranktoken', 'zzranktoken');
-
-  const { results } = search({ query: 'zzranktoken', limit: 5 });
-
-  assert.equal(results[0].title, 'zzranktoken');
 });

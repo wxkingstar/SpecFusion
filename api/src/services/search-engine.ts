@@ -171,27 +171,6 @@ function computeScore(
 }
 
 // ---------------------------------------------------------------------------
-// Total count
-// ---------------------------------------------------------------------------
-
-/**
- * 统计命中总数。
- *
- * 结果列表只取候选集的前 N 条，不能拿它的长度当总数。未指定 mode 时列表会按
- * title + api_path 去重，计数必须用同一口径（COALESCE 对齐 JS 侧的
- * `api_path ?? ''`），否则「共 N 条」和实际列表对不上。
- */
-function countMatches(from: string, where: string, params: unknown[], deduped: boolean): number {
-  const sql = deduped
-    ? `SELECT COUNT(*) AS c FROM (
-         SELECT DISTINCT d.title, COALESCE(d.api_path, '') FROM ${from} WHERE ${where}
-       )`
-    : `SELECT COUNT(*) AS c FROM ${from} WHERE ${where}`;
-
-  return (getDb().prepare(sql).get(...params) as { c: number }).c;
-}
-
-// ---------------------------------------------------------------------------
 // Error code search
 // ---------------------------------------------------------------------------
 
@@ -236,8 +215,6 @@ export function search(
 
   const queryType = detectQueryType(trimmedQuery);
   let scoredRows: ScoredRow[] = [];
-  // 能用 SQL 精确算出总数的分支在这里赋值；留空则退回候选集长度
-  let exactTotal: number | undefined;
 
   // ----- 错误码搜索 -----
   if (queryType === 'error_code') {
@@ -277,29 +254,28 @@ export function search(
 
   // ----- API 路径搜索 -----
   else if (queryType === 'api_path') {
-    const filterParams: unknown[] = [`%${trimmedQuery}%`];
+    const params: unknown[] = [`%${trimmedQuery}%`];
     let whereExtra = '';
 
     if (source) {
-      whereExtra += ' AND d.source_id = ?';
-      filterParams.push(source);
+      whereExtra += ' AND source_id = ?';
+      params.push(source);
     }
     if (mode) {
-      whereExtra += ' AND d.dev_mode = ?';
-      filterParams.push(mode);
+      whereExtra += ' AND dev_mode = ?';
+      params.push(mode);
     }
+    params.push(limit);
 
     const rows = db
       .prepare(
-        `SELECT d.* FROM documents d WHERE d.api_path LIKE ?${whereExtra} LIMIT ?`,
+        `SELECT * FROM documents WHERE api_path LIKE ?${whereExtra} LIMIT ?`,
       )
-      .all(...filterParams, limit) as Document[];
+      .all(...params) as Document[];
 
     for (const doc of rows) {
       scoredRows.push({ doc, score: 50 });
     }
-
-    exactTotal = countMatches('documents d', `d.api_path LIKE ?${whereExtra}`, filterParams, !mode);
   }
 
   // ----- 关键词搜索 (FTS5) -----
@@ -334,14 +310,15 @@ export function search(
     try {
       const rows = db
         .prepare(
-          // 候选集必须按 bm25 排序再截断：不排序时 SQLite 按 rowid 返回，
-          // 命中上万条的查询只会拿到 rowid 最小的 200 条，最相关的文档
-          // 根本进不了后面的 computeScore 排序。bm25 越小越相关。
+          // 这里不能加 ORDER BY bm25，也不能另跑一次精确计数：两者都要枚举
+          // 全部命中行。生产 Pod 只有 512Mi 内存、数据库 1.9GB 在 PVC 网络
+          // 存储上，page cache 装不下工作集，命中 3 万条的查询实测要 12s，
+          // 而 better-sqlite3 是同步的，会把事件循环连同健康探针一起堵死。
+          // 代价是候选集只是 rowid 最小的 200 条，排序质量和「共 N 条」都受限。
           `SELECT d.*, bm25(documents_fts) as fts_rank
            FROM documents_fts f
            JOIN documents d ON d.rowid = f.rowid
            WHERE documents_fts MATCH ?${whereExtra}
-           ORDER BY bm25(documents_fts)
            LIMIT 200`,
         )
         .all(matchExpr, ...extraParams) as (Document & { fts_rank: number })[];
@@ -351,19 +328,8 @@ export function search(
         const score = computeScore(doc as Document, trimmedQuery, tokens, fts_rank);
         scoredRows.push({ doc: doc as Document, fts_rank, score });
       }
-
-      exactTotal = countMatches(
-        'documents_fts f JOIN documents d ON d.rowid = f.rowid',
-        `documents_fts MATCH ?${whereExtra}`,
-        [matchExpr, ...extraParams],
-        !mode,
-      );
     } catch {
-      // FTS5 MATCH 语法错误时 fallback 到 LIKE 搜索。
-      // 这里的 content LIKE 全表扫描代价很高（真实库 6s+），不再额外算总数，
-      // 退回候选集长度。
-      scoredRows = [];
-      exactTotal = undefined;
+      // FTS5 MATCH 语法错误时 fallback 到 LIKE 搜索
       let whereExtra2 = '';
       const likeParams: unknown[] = [];
       for (const token of tokens) {
@@ -422,7 +388,9 @@ export function search(
     }
   }
 
-  const totalCount = exactTotal ?? scoredRows.length;
+  // 候选集封顶 200 条，所以命中很多时这个数字是下限而不是真实总数，
+  // 详见上面 FTS 查询处的注释
+  const totalCount = scoredRows.length;
   scoredRows = scoredRows.slice(0, limit);
 
   // ----- 构造 SearchResult -----
