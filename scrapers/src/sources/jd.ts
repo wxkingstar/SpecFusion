@@ -40,13 +40,31 @@ interface BusinessModel {
 }
 
 /**
- * 京东 API 文档的业务模型分类。
- * POP（第三方商家）和自营是主要的文档来源。
+ * 京东 API 文档的业务模型分类（文档站侧栏顶部的筛选按钮）。
+ * 2026-09 改版后京东健康、拍拍、ECLP、小程序等垂直业务的 API 移到了「其他」等分类下，
+ * 只抓 POP/自营 会漏掉一半以上。
+ * 「酒旅」(businessModel=4) 只有 SP-API（gwType=1）文章型文档，listApi4Overview 不返回 API 列表，暂不覆盖。
  */
 const BUSINESS_MODELS: BusinessModel[] = [
   { name: 'POP', value: 1 },
   { name: '自营', value: 3 },
+  { name: '秒送', value: 2 },
+  { name: '政企', value: 5 },
+  { name: '其他', value: 0 },
 ];
+
+/**
+ * listApiGroup 不返回、但 listApi4Overview 可正常取数的隐藏分类（按 businessModel 归类）。
+ * 2026-09 发现：打开旧「京东健康开放API」文档页时，页面自己请求的是分类 201695「健康业务」的概览，
+ * 该分类含 430+ 个 jingdong.health.* API，却不在「其他」的 6 个分类列表里；201674「工品通」同理。
+ * 发现方法：按旧文档 URL 逐个打开页面，捕获页面请求的 listApi4Overview 里 overview.groupId。
+ */
+const HIDDEN_GROUPS: Record<number, ApiGroup[]> = {
+  0: [
+    { id: 201695, groupName: '健康业务' },
+    { id: 201674, groupName: '工品通' },
+  ],
+};
 
 // ── DSM API 响应类型 ─────────────────────────────────────────────────────────
 
@@ -56,11 +74,11 @@ interface DsmResponse<T> {
   data: T;
 }
 
-/** listApiGroup 响应中的分类项 */
+/** listApiGroup 响应中的分类项（2026-09 起只含 id + groupName） */
 interface ApiGroup {
   id: number;             // 分类 ID（对应 URL 中的 apiCateId）
-  groupName: string;      // 分类名称，如 "店铺API"
-  josGroupId: number;     // JOS 分组 ID
+  groupName: string;      // 分类名称，如 "门店""商品"
+  josGroupId?: number;    // JOS 分组 ID（旧版叶子组才有）
   description?: string;
   groupOrder?: number;
   groupStatus?: number;
@@ -80,6 +98,41 @@ interface ApiOverviewItem {
 
 // ── 工具函数 ──────────────────────────────────────────────────────────────────
 
+
+/**
+ * 概览列表里的真实 API：排除 id 为负的「xx概览」占位项（DOM 降级提取的项 id 为 0，保留）。
+ * 不按 `jingdong.` 前缀过滤——秒送的 API 名是 `jd.o2o.*`。
+ */
+function isRealApi(api: ApiOverviewItem): boolean {
+  return Boolean(api.apiName) && api.id >= 0;
+}
+
+/**
+ * 展开 listApi4Overview 的 data。POP/自营/秒送的分类直接返回扁平 API 列表；
+ * 政企/其他 的分类只返回一个概览项，API 嵌套在
+ * `data[].directoryList[]（子目录）.apiList[]（包装项）.apiList[]` 里。
+ */
+function flattenOverviewItems(nodes: unknown[]): ApiOverviewItem[] {
+  const out: ApiOverviewItem[] = [];
+  const seen = new Set<number>();
+  const walk = (list: unknown[]) => {
+    for (const node of list) {
+      if (!node || typeof node !== 'object') continue;
+      const item = node as ApiOverviewItem & { directoryList?: unknown[]; apiList?: unknown[] };
+      if (typeof item.apiName === 'string' && item.apiName) {
+        if (typeof item.id === 'number' && item.id > 0) {
+          if (seen.has(item.id)) continue;
+          seen.add(item.id);
+        }
+        out.push(item);
+      }
+      if (Array.isArray(item.directoryList)) walk(item.directoryList);
+      if (Array.isArray(item.apiList)) walk(item.apiList);
+    }
+  };
+  walk(nodes);
+  return out;
+}
 
 function escapeCell(text: string): string {
   if (!text) return '';
@@ -165,21 +218,23 @@ export class JdSource implements DocSource {
   }
 
   /**
-   * 等待并捕获"富" listApiGroup 响应（含 groupMap 字段的完整叶子 API 组列表，约 83 个）。
+   * 等待并捕获 listApiGroup 响应（API 分类列表）。
    *
-   * 改版说明（2026-06）：京东把首页 Tab 触发的 listApiGroup 改为只返回 16 个顶层大类
-   * （商品API/订单API/...），在其 id 上调用 listApi4Overview 会返回空数组。
-   * 而深链概览页（apiCateId=叶子组 id）触发的 listApiGroup 仍返回完整叶子组列表，
-   * 每项含 groupMap 字段。这里通过该字段区分两种响应，只接受富响应。
+   * 改版说明：
+   * - 2026-06：首页 Tab 触发的 listApiGroup 只返回 16 个顶层大类，在其 id 上调用
+   *   listApi4Overview 返回空；深链概览页触发的「富」响应（含 groupMap）才是 83 个叶子组。
+   * - 2026-09：再次改版，叶子组层级取消。listApiGroup 固定返回顶层分类（门店/商品/订单…，
+   *   每项只有 id + groupName，不再有 groupMap），listApi4Overview 在顶层分类 id 上直接
+   *   返回该分类下全部 API（旧叶子组 id 返回空）。
    */
-  private waitForLeafGroups(
+  private waitForApiGroups(
     page: Page,
     timeout = DSM_RESPONSE_TIMEOUT,
   ): Promise<ApiGroup[]> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         page.off('response', handler);
-        reject(new Error(`[jd] listApiGroup（叶子组）响应超时 (${timeout}ms)`));
+        reject(new Error(`[jd] listApiGroup 响应超时 (${timeout}ms)`));
       }, timeout);
 
       const handler = async (response: Response) => {
@@ -192,8 +247,7 @@ export class JdSource implements DocSource {
           ) {
             const body = await response.json();
             const data = body?.data;
-            // 仅接受含 groupMap 的富响应（叶子组），忽略 16 项顶层大类精简响应
-            if (Array.isArray(data) && data.length > 0 && 'groupMap' in data[0]) {
+            if (Array.isArray(data) && data.length > 0 && 'groupName' in data[0]) {
               clearTimeout(timer);
               page.off('response', handler);
               resolve(data as ApiGroup[]);
@@ -209,16 +263,14 @@ export class JdSource implements DocSource {
   }
 
   /**
-   * 获取指定业务模型下的完整叶子 API 组列表。
-   * 用任一已知叶子组（店铺API, id=88）的深链概览页作为种子触发富 listApiGroup。
-   * 注：叶子组列表与 businessModel 无关（POP/自营 返回相同的 83 组），
-   * businessModel 仅在后续 listApi4Overview 层过滤每个组下可用的 API。
+   * 获取指定业务模型下的 API 分类列表。
+   * 通过带 businessModel 参数的深链概览页触发 listApiGroup（页面会先切换业务模型再拉分类）。
    */
   private async fetchLeafGroups(
     page: Page,
     bm: BusinessModel,
   ): Promise<ApiGroup[]> {
-    const groupPromise = this.waitForLeafGroups(page);
+    const groupPromise = this.waitForApiGroups(page);
     const seedUrl = `${JD_BASE}/v2/?_=${Date.now()}#/doc/api?apiCateId=88&apiId=-88&apiName=${encodeURIComponent('店铺API概览')}&gwType=0&businessModel=${bm.value}`;
     await page.goto(seedUrl, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT });
     try {
@@ -246,13 +298,14 @@ export class JdSource implements DocSource {
       console.log(`[jd] 提取业务模型: ${bm.name} (businessModel=${bm.value})`);
 
       try {
-        // 获取完整叶子 API 组列表（约 83 个，含"店铺API""B2B开放API"等）。
-        // 见 fetchLeafGroups / waitForLeafGroups 的改版说明。
-        const groups = await this.fetchLeafGroups(page, bm);
-        if (groups.length === 0) {
+        // 获取 API 分类列表（门店/商品/订单…）。见 waitForApiGroups 的改版说明。
+        const fetched = await this.fetchLeafGroups(page, bm);
+        if (fetched.length === 0) {
           console.warn(`[jd]   未获取到 ${bm.name} 的 API 组列表，跳过`);
           continue;
         }
+        const hidden = (HIDDEN_GROUPS[bm.value] ?? []).filter(h => !fetched.some(g => g.id === h.id));
+        const groups = [...fetched, ...hidden];
 
         console.log(`[jd]   发现 ${groups.length} 个 API 组`);
 
@@ -261,8 +314,13 @@ export class JdSource implements DocSource {
           console.log(`[jd]   提取分类: ${group.groupName} (id=${group.id})`);
 
           try {
-            const apis = await this.fetchGroupApis(page, group, bm);
-            const realApis = apis.filter(a => a.apiName?.startsWith('jingdong.'));
+            let apis = await this.fetchGroupApis(page, group, bm);
+            // listApi4Overview 偶发响应超时会得到空列表（整个分类 0 个 API），重试一次
+            if (!apis.some(isRealApi)) {
+              await delay(NAV_DELAY);
+              apis = await this.fetchGroupApis(page, group, bm);
+            }
+            const realApis = apis.filter(isRealApi);
 
             console.log(`[jd]     ${group.groupName}: ${realApis.length} 个 API`);
 
@@ -275,7 +333,9 @@ export class JdSource implements DocSource {
                 ? `${api.apiName}（${api.znName}）`
                 : api.apiName;
 
-              const sourceUrl = `${JD_BASE}/v2/#/doc/api?apiCateId=${group.id}&apiId=${api.id}&apiName=${encodeURIComponent(api.apiName)}&gwType=0`;
+              // 必须带 businessModel：页面会沿用上一次选中的业务模型，与该 API 所属模型不一致时
+              // .api-doc-content 整块不渲染（如在「政企」下打开「其他」分类的 API）
+              const sourceUrl = `${JD_BASE}/v2/#/doc/api?apiCateId=${group.id}&apiId=${api.id}&apiName=${encodeURIComponent(api.apiName)}&gwType=0&businessModel=${bm.value}`;
 
               const lastUpdated = api.modified
                 ? new Date(api.modified).toISOString().split('T')[0]
@@ -417,7 +477,7 @@ export class JdSource implements DocSource {
     try {
       const resp = await promise;
       if (resp.code === 200 && Array.isArray(resp.data)) {
-        return resp.data;
+        return flattenOverviewItems(resp.data);
       }
     } catch {
       // DSM 响应超时或异常
