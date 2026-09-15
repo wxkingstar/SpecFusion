@@ -44,6 +44,12 @@ const removed = localPaths.filter((p) => !remote.has(p));
 // 此时先离线核对待删集合，再用 --expect-removed <N> 显式确认数量；实际待删数与 N 不一致仍然中止。
 const expectIdx = process.argv.indexOf('--expect-removed');
 const expectRemoved = expectIdx > 0 ? Number(process.argv[expectIdx + 1]) : NaN;
+// 显式给了 --expect-removed 时无论比例如何都必须严格一致：dry-run 到 --apply 之间目录若变了
+// （抓取不全、站点又改版），宁可中止重新核对，也不按一份没核对过的集合删除。
+if (expectIdx > 0 && expectRemoved !== removed.length) {
+  console.error(`[prune] ✗ 待删数 ${removed.length} 与 --expect-removed ${process.argv[expectIdx + 1]} 不一致，中止。请重新 dry-run 核对`);
+  process.exit(1);
+}
 if (localPaths.length > 0 && remote.size < localPaths.length * 0.5) {
   if (!Number.isInteger(expectRemoved) || expectRemoved !== removed.length) {
     console.error(
