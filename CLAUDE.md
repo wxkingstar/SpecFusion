@@ -111,6 +111,22 @@ SPECFUSION_PACE=1.5 npx tsx scrapers/src/cli.ts sync taobao   # 间隔放大 1.5
 批量跑用 `scripts/sync-batch.sh <批次名> <源:PACE:超时秒> ...`（串行 + 按进程组
 杀超时任务，避免留下孤儿进程）。
 
+### 钉钉
+
+目录走文档中心公开接口（`/api/docCenter/getDocPageGroupList` → `getDocInfoList?tabCode=`），
+不需要桥接，`cli.ts diff dingtalk` 可直接跑；正文仍需浏览器渲染（JSAPI 参数表等由页面
+运行时填充，OSS 原始 topic HTML 里只有占位符）。
+
+- `/document/orgapp|isvapp/*` 页面上那棵无 `docUrl` 的导航树是 icms 的 DITA map
+  （`icms-document.oss-cn-beijing.aliyuncs.com/zh-CN/dingtalk/<section>/meta.json`），
+  页面不属于任何 Tab 时前端才回退渲染它；orgapp/isvapp 自 2025-09 停更，**不要收录**
+- 服务端 API / 客户端 JSAPI 两个 Tab 的路径前缀沿用历史名「企业内部应用」「客户端JSAPI」，
+  其余 Tab 为「分组名/Tab 名」，见 `LEGACY_TAB_PREFIX`
+- 代码块是 Monaco 编辑器：DOM 里的可视行带行号、长代码被虚拟滚动截断、未选中的语言 tab
+  只渲染 1 行，**源码必须从 `window.monaco` 的 model 读**（编辑器 `data-uri` = model uri）
+- `htmlToMarkdown` 里生成的片段要用文本节点插回（`asText`），`replaceWith(字符串)` 会被
+  再解析成 HTML，`<?php`、`List<String>` 会被吞掉
+
 ### 拼多多
 
 文档接口在 `open-api.pinduoduo.com`，要 POST + 登录态 + `Anti-Content`（页面 JS 每次
