@@ -9,7 +9,19 @@ const BASE_URL = 'https://open.feishu.cn';
 const DIRECTORY_URL = `${BASE_URL}/api/tools/docment/directory_list`;
 const URI_MAP_URL = `${BASE_URL}/document_portal/v1/document_portal/v1/document/uri/mapping?lang=zh-CN`;
 const DOCUMENT_DETAIL_URL = `${BASE_URL}/api/tools/document/detail`;
+/**
+ * 正文兜底接口：文档站前端自己也在用，返回的 Markdown 与 detail 完全相同
+ * （对照文档逐字节一致），但走的是另一条后端链路。
+ */
+const DOCUMENT_PORTAL_DETAIL_URL = `${BASE_URL}/document_portal/v1/document/get_detail`;
 const DOC_BASE_URL = `${BASE_URL}/document`;
+
+/**
+ * detail 接口的「Internal Error」业务码。飞书人事等超大文档（正文 30 万字符
+ * 以上）在这条链路上会稳定 504 + code 2200，换参数（lang / version / POST /
+ * 别名路径）都无效，只能换接口。
+ */
+const DETAIL_INTERNAL_ERROR_CODE = 2200;
 
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
@@ -613,7 +625,11 @@ export class FeishuSource implements DocSource {
         params: { fullPath },
       });
       if (!response.data || response.data.code !== 0) {
-        throw new Error(`[feishu] 文档接口返回异常: ${JSON.stringify(response.data)}`);
+        // 业务码带在错误上，供下面判断是否该走兜底（HTTP 200 + code 2200 的情况）
+        throw Object.assign(
+          new Error(`[feishu] 文档接口返回异常: ${JSON.stringify(response.data)}`),
+          { feishuCode: response.data?.code },
+        );
       }
       const doc = response.data.data?.document;
       if (!doc || !doc.content) {
@@ -621,14 +637,53 @@ export class FeishuSource implements DocSource {
       }
       return doc as DocumentResponse;
     } catch (error: unknown) {
-      const axiosErr = error as { response?: { status?: number } };
+      const axiosErr = error as {
+        response?: { status?: number; data?: { code?: number } };
+        feishuCode?: number;
+      };
       const status = axiosErr?.response?.status;
+      const code = axiosErr?.feishuCode ?? axiosErr?.response?.data?.code;
       const retriable = !status || status >= 500 || status === 429;
       if (attempt < RETRY_LIMIT && retriable) {
         await delay(RETRY_DELAY_MS * attempt);
         return this.fetchMarkdown(fullPath, attempt + 1);
       }
+      // 只有 detail 侧 5xx / code 2200 才换接口：这是飞书那条链路自身的故障，
+      // 文档并没有下线。其余错误（404、参数错误等）照旧抛出，不掩盖真问题。
+      if ((status !== undefined && status >= 500) || code === DETAIL_INTERNAL_ERROR_CODE) {
+        return this.fetchMarkdownViaPortal(fullPath, error);
+      }
       throw error;
+    }
+  }
+
+  /**
+   * 正文兜底：detail 链路挂掉时改用 document_portal 取同一篇文档。
+   *
+   * 两个接口返回的 Markdown 完全一致（对照文档 MD5 相同），因此正文转换、
+   * path / platformId 都不需要跟着变；updateTime 也照样带回来。
+   */
+  private async fetchMarkdownViaPortal(
+    fullPath: string,
+    detailError: unknown,
+  ): Promise<DocumentResponse> {
+    try {
+      const response = await this.http.get(DOCUMENT_PORTAL_DETAIL_URL, {
+        params: { fullPath },
+      });
+      if (!response.data || response.data.code !== 0) {
+        throw new Error(`[feishu] 兜底接口返回异常: ${JSON.stringify(response.data)}`);
+      }
+      const data = response.data.data;
+      if (!data || !data.content) {
+        throw new Error(`[feishu] 兜底接口未获取到 Markdown 内容: ${fullPath}`);
+      }
+      console.warn(`[feishu] detail 接口失败，已改用 document_portal 兜底: ${fullPath}`);
+      return { content: data.content, updateTime: data.updateTime };
+    } catch (error: unknown) {
+      const detailMsg = detailError instanceof Error ? detailError.message : String(detailError);
+      const portalMsg = error instanceof Error ? error.message : String(error);
+      throw new Error(`${detailMsg}；document_portal 兜底同样失败: ${portalMsg}`);
     }
   }
 }
