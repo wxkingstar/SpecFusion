@@ -1,6 +1,6 @@
 # @wxkingstar/specfusion-dsh
 
-[SpecFusion](https://github.com/wxkingstar/SpecFusion) 的 **DeepSeek Harness 插件**：开箱即用地在 DSH 里搜索 20 个中国开放平台的 65,000+ 篇 API 开发文档。
+[SpecFusion](https://github.com/wxkingstar/SpecFusion) 的 **DeepSeek Harness 插件**：开箱即用地在 DSH 里搜索 20 个中国开放平台的 67,000+ 篇 API 开发文档。
 
 安装后，DSH 会得到一个可被模型自动调用的 skill `specfusion`，以及 5 个**原生工具**（无需 Bash + curl）：
 

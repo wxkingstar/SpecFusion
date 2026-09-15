@@ -1,6 +1,6 @@
 {
   "name": "@wxkingstar/specfusion-dsh",
-  "description": "SpecFusion skill + native API-docs search tools for DeepSeek Harness: 65,000+ API docs across 20 Chinese open platforms",
+  "description": "SpecFusion skill + native API-docs search tools for DeepSeek Harness: 67,000+ API docs across 20 Chinese open platforms",
   "version": "0.1.1",
   "type": "module",
   "main": "lib/index.js",
