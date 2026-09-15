@@ -36,16 +36,25 @@ const resp = await fetch(`${API}/admin/source-paths/${source}`, {
 const localPaths: string[] = await resp.json();
 console.log(`[prune] 本地 ${localPaths.length} 篇`);
 
+const removed = localPaths.filter((p) => !remote.has(p));
+
 // 远程目录抓取失败/被限流时可能返回空或严重缺失，此时删除会清空整个源。
 // 远程数量不足本地一半视为目录异常，拒绝执行。
+// 例外：源整体换了路径结构（如 2026-09 京东改版，旧路径全部作废）时本地会是远程的两倍左右。
+// 此时先离线核对待删集合，再用 --expect-removed <N> 显式确认数量；实际待删数与 N 不一致仍然中止。
+const expectIdx = process.argv.indexOf('--expect-removed');
+const expectRemoved = expectIdx > 0 ? Number(process.argv[expectIdx + 1]) : NaN;
 if (localPaths.length > 0 && remote.size < localPaths.length * 0.5) {
-  console.error(
-    `[prune] ✗ 远程目录数量异常 (${remote.size} < 本地 ${localPaths.length} 的 50%)，疑似目录抓取失败，中止。`
-  );
-  process.exit(1);
+  if (!Number.isInteger(expectRemoved) || expectRemoved !== removed.length) {
+    console.error(
+      `[prune] ✗ 远程目录数量异常 (${remote.size} < 本地 ${localPaths.length} 的 50%)，疑似目录抓取失败，中止。` +
+        `（若确认是整体路径迁移，核对后以 --expect-removed ${removed.length} 显式确认）`
+    );
+    process.exit(1);
+  }
+  console.log(`[prune] 远程不足本地 50%，但待删数与 --expect-removed ${expectRemoved} 一致，继续`);
 }
 
-const removed = localPaths.filter((p) => !remote.has(p));
 console.log(`[prune] 待删除残留 ${removed.length} 篇 (${apply ? '真实删除' : 'DRY-RUN'})`);
 removed.slice(0, 10).forEach((p) => console.log('   - ' + p));
 if (removed.length > 10) console.log(`   ... 及其余 ${removed.length - 10} 篇`);
