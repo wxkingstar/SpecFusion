@@ -7,7 +7,7 @@ import { delay } from '../utils/pace.js';
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const BASE_URL = 'https://developers.weixin.qq.com';
-const CATALOG_URL = `${BASE_URL}/miniprogram/dev/OpenApiDoc/`;
+const CATALOG_URL = `${BASE_URL}/miniprogram/dev/server/API/`;
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
@@ -34,7 +34,7 @@ function contentHtmlToMarkdown(rawHtml: string): string {
   const $ = load(rawHtml);
 
   // 移除无用元素
-  $('script, style, .header-anchor, .api-explorer').remove();
+  $('script, style, .header-anchor, .api-explorer, .doc-actions, .doc-updated').remove();
 
   // ── 代码块 ──────────────────────────────────────────────────────────
 
@@ -311,7 +311,10 @@ function extractNavTree($: CheerioAPI): NavNode[] {
       }
 
       // 递归处理子节点
-      const childUl = $li.find(':scope > .NavigationLevel .NavigationLevel__children').first();
+      // 2026-11 改版后 li 外多包了一层 <ul>：.NavigationLevel__children > ul > li
+      const childBox = $li.find(':scope > .NavigationLevel .NavigationLevel__children').first();
+      const innerUl = childBox.children('ul').first();
+      const childUl = innerUl.length > 0 ? innerUl : childBox;
       const children = childUl.length > 0 ? walk(childUl) : [];
 
       if (text) {

@@ -37,7 +37,7 @@ function contentHtmlToMarkdown(rawHtml: string): string {
   const $ = load(rawHtml);
 
   // 移除无用元素
-  $('script, style, .header-anchor, .api-explorer').remove();
+  $('script, style, .header-anchor, .api-explorer, .doc-actions, .doc-updated').remove();
 
   // ── 代码块 ──────────────────────────────────────────────────────────
 
